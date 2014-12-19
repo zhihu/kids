@@ -22,7 +22,8 @@ Installation
 
 You need a complier with C++11 support like GCC 4.7 (or later) or [Clang](http://clang.llvm.org).
 
-    ./autogen.sh
+Download a [release](https://github.com/zhihu/kids). Untar the tarball, then
+
     ./configure
     make
     make test  # optional
