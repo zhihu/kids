@@ -1,0 +1,6 @@
+language: objective-c
+
+xcode_sdk: iphonesimulator
+
+script:
+ - ./autogen.sh && ./configure && make check
