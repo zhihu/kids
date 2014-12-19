@@ -18,9 +18,9 @@ Kids will close client when the buffer size reaches at the `hard_limit` or `soft
 
 ## `ignore_case`
 
-Case sensitive switcher for `PSUBSCRIBE` command.
+Case sensitive switch for `PSUBSCRIBE` command.
 
-`PSUBSCRIBE` command will ignore case sensitive when ignore_case is 'on'.
+`PSUBSCRIBE` command will be case insensitive when ignore_case is 'on'.
 
 
 ## `log`
