@@ -1,11 +1,6 @@
-language: cpp
+language: objective-c
 
-compiler:
- - clang
- - gcc
-
-before_script:
- - ./autogen.sh
+xcode_sdk: iphonesimulator
 
 script:
- - ./configure && make check
+ - ./autogen.sh && ./configure && make check
