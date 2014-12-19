@@ -72,7 +72,7 @@ Kids is BSD-licensed, see LICENSE for more details.
 FAQ
 ---
 
-Q: What is the meaning of "kids"?
+Q: What is the meaning of "kids"?  
 A: "kids" is the recursive acronym of "Kids Is Data Stream".
 
 

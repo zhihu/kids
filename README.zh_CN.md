@@ -62,7 +62,7 @@ Kids 使用 BSD 协议，具体内容详见 LICENSE 文件。
 FAQ
 ---
 
-Q: 为什么叫「kids」?
+Q: 为什么叫「kids」?  
 A: 「kids」是「Kids Is Data Stream」的递归缩写。
 
 架构图
