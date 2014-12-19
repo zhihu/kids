@@ -1,0 +1,124 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          kids
+# Required-Start:    networking
+# Required-Stop:     
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: zhihu log collection and distribution system.
+# Description:       This file should be used to start and stop kids.
+### END INIT INFO
+
+#----------------------------------------------------------------
+# Startup script for kids
+#----------------------------------------------------------------
+
+ulimit -n 65535
+
+# configuration variables
+prog="kids"
+cmd="kids"
+pidfile="/var/run/kids.pid"
+configfile="/etc/kids.conf"
+retval=0
+
+
+# setting environment variables
+LANG=C
+LC_ALL=C
+PATH="$PATH:/usr/bin:/sbin:/usr/sbin:/usr/local/sbin"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"
+export LANG LC_ALL PATH LD_LIBRARY_PATH
+
+
+# start the server
+start(){
+  if [ -f "$pidfile" ] ; then
+    pid=`cat "$pidfile"`
+    printf 'Server already running, pid: %d\n' "$pid"
+    retval=1
+  else
+    printf 'Starting the kids server...'
+    cmd="$cmd -c $configfile -d --pid $pidfile"
+    $cmd
+    sleep 1
+    if [ -f $pidfile ] ; then
+      printf 'OK\n'
+    else
+      rm -f $pidfile
+      printf 'Failed\n'
+      retval=1
+    fi
+  fi
+}
+
+
+# stop the server
+stop(){
+  if [ -f "$pidfile" ] ; then
+    printf 'Stopping the kids server...'
+    pid=`cat "$pidfile"`
+
+    ps -eo pid | grep $pid
+    if [ $? -eq 1 ]; then
+      printf 'Service exited abnormally\n'
+      rm -f $pidfile
+      return
+    fi
+
+    kill -TERM "$pid"
+    c=0
+    while true ; do
+      sleep 0.1
+      if [ -f "$pidfile" ] ; then
+        c=`expr $c + 1`
+        if [ "$c" -ge 100 ] ; then
+          printf 'Failed, Hanging process: %d\n' "$pid"
+          retval=1
+          break
+        fi
+      else
+        printf 'OK\n'
+        break
+      fi
+    done
+  else
+    printf 'Service not running\n'
+    retval=0
+  fi
+}
+
+
+# check permission
+if ! touch "/var/run/$$" >/dev/null 2>&1
+then
+  printf 'Permission denied\n'
+  exit 1
+fi
+rm -f "/var/run/$$"
+
+
+# dispatch the command
+case "$1" in
+start)
+  start
+  ;;
+stop)
+  stop
+  ;;
+restart)
+  stop
+  start
+  ;;
+hup)
+  hup
+  ;;
+*)
+  printf 'Usage: %s {start|stop|restart}\n' "$prog"
+  exit 1
+  ;;
+esac
+
+
+# exit
+exit "$retval"
