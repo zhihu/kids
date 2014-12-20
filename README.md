@@ -49,7 +49,7 @@ In yet another terminal:
     $ redis-cli -p 3388
     $ 127.0.0.1:3388> PUBLISH test message
 
-`redis-cli` needs `redis` to be installed, in MAC, you can run `brew install redis` to install it.
+`redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it.
 
 Full explanation of config file, see [here](doc/config.md).
 
