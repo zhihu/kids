@@ -1,5 +1,4 @@
-kids
-====
+# kids
 
 [![Build Status]][Travis CI]
 
@@ -8,8 +7,7 @@ Kids is a log aggregation system.
 It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) and its pub/sub pattern is ported from [Redis](http://redis.io/).
 
 
-Features
---------
+## Features
 
 * Real-time subscription
 * Distributed collection
@@ -19,8 +17,7 @@ Features
 * No third-party dependencies
 
 
-Installation
-------------
+## Installation
 
 You need a complier with C++11 support like GCC 4.7 (or later) or [Clang](http://clang.llvm.org).
 
@@ -36,8 +33,7 @@ You can use the `--prefix` option to specify the installation location.
 Run `./configure --help` for more config options.
 
 
-Quickstart
-----------
+## Quickstart
 
 Kids comes with some sample config files in `samples/`, after building, simply run:
 
@@ -59,22 +55,42 @@ Full explanation of config file, see [here](doc/config.md).
 
 Run `kids --help` for more running options.
 
+## Run in production
 
-License
--------
+In production, we deploy kids agent at every host, and assign a powerful server to kids server,
+
+We now support making deb package to simplify deployment, to do this, you need:
+
+* build-essential, libtool, automake for building the prject
+* [fpm](https://github.com/jordansissel/fpm) for packaging
+
+### Steps
+
+    git clone https://github.com/zhihu/kids.git
+    cd kids
+    ./autogen.sh
+    ./configure
+    make
+    cp samples/agent.conf debian/
+    # EDIT the config file to fit into your environment: for agent, if you use samples/agent.conf then
+    # you only need to fill in kids server's hostname
+    cd debian
+    ./make_deb.sh
+
+For server, use the same deb package and overwrite /etc/kids.conf with server's config file.
+
+## License
 
 Kids is BSD-licensed, see LICENSE for more details.
 
 
-FAQ
----
+## FAQ
 
 Q: What is the meaning of "kids"?  
 A: "kids" is the recursive acronym of "Kids Is Data Stream".
 
 
-Architecture
-------------
+## Architecture
 
 ![image](doc/image/arch.jpg)
 

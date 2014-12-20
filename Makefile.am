@@ -6,7 +6,4 @@ all-am:
 install:
 	cd src && $(MAKE) install
 
-deb:
-	cd epm && epm -a amd64 -f deb kids
-
 test: check
