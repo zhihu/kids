@@ -26,7 +26,6 @@ You need a complier with C++11 support like GCC 4.7 (or later) or [Clang](http:/
 
 Download a [release](https://github.com/zhihu/kids/releases). Untar the tarball, then:
 
-    ./autogen.sh
     ./configure
     make
     make test  # optional
