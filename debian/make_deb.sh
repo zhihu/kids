@@ -10,6 +10,7 @@ DAEMON_USER="root"
 DAEMON_GROUP="root"
 TYPE="deb"
 
+CONF_FILE="kids.conf"
 KIDS_BIN="../src/kids"
 KIDS_AFTER_INSTALL="kids.after_install"
 KIDS_BEFORE_REMOVE="kids.before_remove"
@@ -26,9 +27,6 @@ function usage {
 function parse_args {
   while getopts ":f:" opt; do
     case $opt in
-      f)
-        CONF_FILE="$OPTARG"
-        ;;
       b)
         KIDS_BIN="$OPTARG"
         ;;
@@ -37,7 +35,7 @@ function parse_args {
         ;;
     esac
   done
-  if [ -z "$CONF_FILE" -o ! -f "$CONF_FILE" ]; then
+  if [ ! -x "$KIDS_BIN" ]; then
     usage
   fi
 }
