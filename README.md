@@ -57,7 +57,7 @@ Run `kids --help` for more running options.
 
 ## Run in production
 
-In production, we deploy kids agent at every host, and assign a powerful server to kids server,
+In production, we deploy kids agent at every host, and assign a powerful server to kids server.
 
 We now support making deb package to simplify deployment, to do this, you need:
 
