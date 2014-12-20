@@ -66,16 +66,9 @@ We now support making deb package to simplify deployment, to do this, you need:
 
 ### Steps
 
-    git clone https://github.com/zhihu/kids.git
-    cd kids
-    ./autogen.sh
-    ./configure
-    make
-    cp samples/agent.conf debian/
-    # EDIT the config file to fit into your environment: for agent, if you use samples/agent.conf then
-    # you only need to fill in kids server's hostname
-    cd debian
-    ./make_deb.sh
+    cp samples/agent.conf debian/kids.conf
+    # EDIT kids.conf, minimally fill in server address
+    ./build.sh
 
 For server, use the same deb package and overwrite /etc/kids.conf with server's config file.
 
@@ -88,8 +81,8 @@ First prepare your config file:
 
     # or samples/server.conf
     copy samples/agent.conf debian/kids.conf
-    # Edit the config to fit in your needs, in the minimum
-    # you should log to stdout to make `docker logs` working
+    # Edit kids.conf, minimally logfile should be set to stdout 
+    # to make `docker logs` work if you run kids in a container.
 
 #### Build a kids container
 
