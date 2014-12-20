@@ -19,10 +19,20 @@ It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) 
 
 ## Installation
 
+### Binaries
+
+kids [releases are available on the Github project releases page](https://github.com/zhihu/kids/releases).
+Binaries are available for Linux, with package for Debian based distributions.
+
+There is an example conf in Debian packages, but it is not useful in production, to deploy in production, see [Run in production](#production).
+
+### From Source
+
 You need a complier with C++11 support like GCC 4.7 (or later) or [Clang](http://clang.llvm.org).
 
-Download a [release](https://github.com/zhihu/kids/releases). Untar the tarball, then:
-
+Download a [source release](https://github.com/zhihu/kids/releases), then:
+	
+	tar xzf kids-VERSION_source.tar.gz
     ./configure
     make
     make test  # optional
@@ -55,16 +65,26 @@ Full explanation of config file, see [here](doc/config.md).
 
 Run `kids --help` for more running options.
 
+<a name="production"></a>
 ## Run in production
 
 In production, we deploy kids agent at every host, and assign a powerful server to kids server,
 
-We now support making deb package to simplify deployment, to do this, you need:
+To simplify deployment, use a package or a docker container.
+
+If you do not have to include config in the package, this may happen, 
+for example, you use puppet or saltstack to manage your configuration file, 
+then you do not have to make the package yourself, just download it from
+[kids's Github releases page](https://github.com/zhihu/kids/releases).
+
+### Creating packages
+
+Prerequisites:
 
 * build-essential, libtool, automake for building the prject
 * [fpm](https://github.com/jordansissel/fpm) for packaging
 
-### Steps
+Instructions: 
 
     cp samples/agent.conf debian/kids.conf
     # EDIT kids.conf, minimally fill in server address
