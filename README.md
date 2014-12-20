@@ -85,6 +85,7 @@ You can use docker to build a kids container to run or use it to make a deb pack
 a container.
 
 First prepare your config file:
+
     # or samples/server.conf
     copy samples/agent.conf debian/kids.conf
     # Edit the config to fit in your needs, in the minimum
