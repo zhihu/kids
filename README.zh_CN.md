@@ -23,7 +23,6 @@ Kids 是一个日志聚合系统。
 
 请从 [release](https://github.com/zhihu/kids/releases) 中下载最新版本，解压之后执行：
 
-    ./autogen.sh
     ./configure
     make
     make test  # optional
