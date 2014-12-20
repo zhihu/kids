@@ -52,7 +52,7 @@ function prepare_dir {
   cd ..
   cp $KIDS_BIN  $BUILD_DIR/usr/local/bin/
   cp $CONF_FILE $BUILD_DIR/etc/kids.conf
-  cp $LICENSE $BUILD_DIR/usr/share/kids/LICENSE
+  cp $LICENSE_FILE $BUILD_DIR/usr/share/kids/LICENSE
   DIR=(usr etc data)
 }
 
