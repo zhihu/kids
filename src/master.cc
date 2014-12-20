@@ -6,7 +6,7 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
   char ip[128];
   char error[1024];
 
-  cfd = anetTcpAccept(error, fd, ip, &port);
+  cfd = anetTcpAccept(error, fd, ip, sizeof(ip), &port);
   if (cfd == AE_ERR) {
     LogError("Accept client connection failed: %s", error);
     return;
@@ -55,11 +55,12 @@ Master::Master(const KidsConfig *conf)
   unixfd_ = -1;
 
   char error[1024];
+  int backlog = 511;
   if (config_.listen_port > 0) {
     if (config_.listen_host.empty()) {
-      tcpfd_ = anetTcpServer(error, config_.listen_port, NULL);
+      tcpfd_ = anetTcpServer(error, config_.listen_port, NULL, backlog);
     } else {
-      tcpfd_ = anetTcpServer(error, config_.listen_port, const_cast<char*>(config_.listen_host.c_str()));
+      tcpfd_ = anetTcpServer(error, config_.listen_port, const_cast<char*>(config_.listen_host.c_str()), backlog);
     }
     if (tcpfd_ == ANET_ERR) {
       LogError("%s", error);
@@ -68,7 +69,7 @@ Master::Master(const KidsConfig *conf)
 
   if (!config_.listen_socket.empty()) {
     unlink(const_cast<char*>(config_.listen_socket.c_str()));
-    unixfd_ = anetUnixServer(error, const_cast<char*>(config_.listen_socket.c_str()), 0666);
+    unixfd_ = anetUnixServer(error, const_cast<char*>(config_.listen_socket.c_str()), 0666, backlog);
     if (unixfd_ == ANET_ERR) {
       LogError("%s", error);
     }

@@ -142,7 +142,7 @@ std::string Client::ToString() {
   int port;
   int emask;
 
-  if (anetPeerToString(fd_, ip, &port) == -1) {
+  if (anetPeerToString(fd_, ip, sizeof(ip), &port) == -1) {
     ip[0] = '?';
     ip[1] = '\0';
     port = 0;

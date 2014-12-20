@@ -39,28 +39,23 @@ Run `./configure --help` for more config options.
 Quickstart
 ----------
 
-In the distributed mode, first start kids with the `server.conf`:
+Kids comes with some sample config files in `samples/`, after building, simply run:
 
-    kids -c sample/server.conf
+    kids -c samples/dev.conf
 
-Next, edit `host` and `port` in `networkstore` in `sample/agent.conf` as:
+Because kids uses redis protocol, so you can use `redis-cli` to play with it, open another terminal:
+    
+    $ redis-cli -p 3888
+    $ 127.0.0.1:3388> PSUBSCRIBE *
 
-	store network primary {
-      host kidsserver;
-      port 3388;
-    }
+In yet another terminal:
+    
+    $ redis-cli -p 3388
+    $ 127.0.0.1:3388> PUBLISH test message
 
-Then, run kids with the modified config file:
-
-	kids -c sample/agent.conf
-
-Finally, use `publish` command in Redis protocol to send log to kids agent.
-All the log will be resent to your kids server and persistently stored to disk for analysis later.
-You can also use `subscribe` or `psubscribe` in Redis protocol to get real-time log from kids server.
+`redis-cli` needs `redis` to be installed, in MAC, you can run `brew install redis` to install it.
 
 Full explanation of config file, see [here](doc/config.md).
-
-You can directly run `kids -c sample/server.conf` on single-server mode without agent, but it is NOT recommended.
 
 Run `kids --help` for more running options.
 
