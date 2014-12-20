@@ -47,6 +47,7 @@ src/kids
 stamp-h1
 epm/linux-*/
 *.deb
+debian/kids.conf
 
 *.deps
 *.dirstamp

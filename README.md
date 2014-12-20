@@ -79,6 +79,38 @@ We now support making deb package to simplify deployment, to do this, you need:
 
 For server, use the same deb package and overwrite /etc/kids.conf with server's config file.
 
+### Using Docker
+
+You can use docker to build a kids container to run or use it to make a deb package and run kids outside
+a container.
+
+First prepare your config file:
+   # or samples/server.conf
+    copy samples/agent.conf debian/kids.conf
+    # Edit the config to fit in your needs, in the minimum
+    # you should log to stdout to make `docker logs` working
+
+#### Build a kids container
+
+In project root directory, build the kids image:
+
+    docker build -t zhihu/kids .
+
+Now you can run it like so:
+
+    docker run -d -p 3388:3388 zhihu/kids
+
+#### Make a deb package
+
+Make sure you have built the zhihu/kids image, because the kids-deb depends on it.
+
+    cd debian
+    docker build -t zhihu/kid-deb .
+
+You can now use the image to get a deb package.
+
+    docker run -v /path/to/save/deb:/deb zhihu/kids-deb
+
 ## License
 
 Kids is BSD-licensed, see LICENSE for more details.
