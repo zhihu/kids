@@ -11,6 +11,7 @@ DAEMON_GROUP="root"
 TYPE="deb"
 
 CONF_FILE="kids.conf"
+LICENSE_FILE="../LICENSE"
 KIDS_BIN="../src/kids"
 KIDS_AFTER_INSTALL="kids.after_install"
 KIDS_BEFORE_REMOVE="kids.before_remove"
@@ -44,12 +45,14 @@ function prepare_dir {
   mkdir -p $BUILD_DIR
   cd $BUILD_DIR
   mkdir -p usr/local/bin
+  mkdir -p usr/share/kids
   mkdir -p etc
   mkdir -p data/data/kidsbuf
   mkdir -p data/data/kids/logs
   cd ..
   cp $KIDS_BIN  $BUILD_DIR/usr/local/bin/
   cp $CONF_FILE $BUILD_DIR/etc/kids.conf
+  cp $LICENSE $BUILD_DIR/usr/share/kids/LICENSE
   DIR=(usr etc data)
 }
 
