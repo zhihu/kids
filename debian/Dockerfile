@@ -10,4 +10,4 @@ RUN cd /kids/debian && ./make_deb.sh
 
 VOLUME ["/deb"]
 
-ENTRYPOINT ["cp", "/kids/debian/*.deb", "/deb"]
+CMD ["bash", "-c", "cp /kids/debian/*.deb /deb"]
