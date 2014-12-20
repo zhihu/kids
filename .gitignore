@@ -46,6 +46,7 @@ config.h
 src/kids
 stamp-h1
 epm/linux-*/
+*.deb
 
 *.deps
 *.dirstamp
