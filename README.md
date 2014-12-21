@@ -22,7 +22,7 @@ It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) 
 ### Binaries
 
 kids [releases are available on the Github project releases page](https://github.com/zhihu/kids/releases).
-Binaries are available for Linux, with package for Debian based distributions.
+Binaries are available for 64bit Linux, with package for Debian based distributions.
 
 There is an example conf in Debian packages, but it is not useful in production, to deploy in production, see [Run in production](#production).
 
@@ -58,9 +58,9 @@ Because kids uses redis protocol, you can use `redis-cli` to play with it, open 
 In yet another terminal:
     
     $ redis-cli -p 3388
-    $ 127.0.0.1:3388> PUBLISH test message
+    $ 127.0.0.1:3388> PUBLISH kids.testtopic message
 
-`redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it.
+`redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it. On Linux, run `sudo apt-get install redis-tools`
 
 
 
@@ -86,6 +86,7 @@ See [here](doc/config.md).
 
 Prerequisites:
 
+* build-essential, libtool, automake for building the project
 * [fpm](https://github.com/jordansissel/fpm)
 
 Download [kids source release](https://github.com/zhihu/kids/releases), then: 

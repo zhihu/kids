@@ -1,5 +1,7 @@
 # kids
 
+[![Build Status]][Travis CI]
+
 
 Kids 是一个日志收集系统。
 
@@ -7,7 +9,6 @@ Kids 是一个日志收集系统。
 
 
 ## 特性
-
 
 * 实时订阅
 * 分布式收集，集中存储
@@ -51,7 +52,7 @@ kids 使用 redis 协议，现在你可以用 `redis-cli` 和它通信：
 	$ redis-cli -p 3388
 	$ 127.0.0.1:3388> PSUBSCRIBE *
 
-再另一个终端：
+在另一个终端：
 
 	$ redis-cli -p 3388
     $ 127.0.0.1:3388> PUBLISH test message
@@ -147,7 +148,6 @@ Kids 使用 BSD-3 协议，具体内容详见 LICENSE 文件。
 
 ## FAQ
 
-
 Q: 为什么叫「kids」?  
 A: 「kids」是「Kids Is Data Stream」的递归缩写。
 
@@ -155,3 +155,7 @@ A: 「kids」是「Kids Is Data Stream」的递归缩写。
 ## 架构图
 
 ![image](doc/image/arch.jpg)
+
+[Build Status]: https://img.shields.io/travis/zhihu/kids/master.svg?style=flat
+[Travis CI]:	https://travis-ci.org/zhihu/kids
+
