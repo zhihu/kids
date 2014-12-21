@@ -1,10 +1,12 @@
 AC_PREREQ(2.61)
-AC_INIT(kids, 1.0.0, opensource@zhihu.com)
+m4_include([version.m4])
+AC_INIT(kids, KIDS_VERSION_NUMBER, opensource@zhihu.com)
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/kids.cc])
 AC_CONFIG_HEADER([config.h])
 
+AC_SUBST(VERSION, KIDS_VERSION_NUMBER)
 # Checks for programs.
 CXXFLAGS="$CXXFLAGS -std=c++11"
 AC_PROG_CXX
