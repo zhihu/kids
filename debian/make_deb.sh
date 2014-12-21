@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.0.0"
+VERSION=$(grep 'AC_INIT(kids' ../configure.ac | awk -F',' '{print $2}'| tr -d ' ')
 NAME="kids"
 PACKAGE_PATH=`pwd`/"${NAME}_${VERSION}_amd64.deb"
 LICENSE="BSD-3-clause"
