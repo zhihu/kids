@@ -2,6 +2,7 @@
 
 VERSION="1.0.0"
 NAME="kids"
+PACKAGE_PATH=`pwd`/"${NAME}_${VERSION}_amd64.deb"
 LICENSE="BSD-2-clause"
 MAINTAINER="opensource@zhihu.com"
 URL="https://github.com/zhihu/kids"
@@ -76,6 +77,7 @@ function package {
   OPTS+=(--deb-init `pwd`/$KIDS_INIT)
 
   OPTS+=(--deb-user "$DAEMON_USER" --deb-group "$DAEMON_GROUP")
+  OPTS+=(--package "$PACKAGE_PATH")
   OPTS=("${OPTS[@]}" "${DIR[@]}")
   echo "fpm ${OPTS[@]}"
   fpm "${OPTS[@]}"
