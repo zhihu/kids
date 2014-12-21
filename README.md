@@ -150,7 +150,7 @@ to build kids from source. Run the following to build kids:
 
 ## License
 
-Kids is BSD-licensed, see LICENSE for more details.
+Kids Uses BSD-3, see LICENSE for more details.
 
 
 ## FAQ

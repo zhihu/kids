@@ -142,7 +142,7 @@ Server 端，用同样的 deb 包，部署时用 server 端的配置文件覆盖
 ## 开源协议
 
 
-Kids 使用 BSD 协议，具体内容详见 LICENSE 文件。
+Kids 使用 BSD-3 协议，具体内容详见 LICENSE 文件。
 
 
 ## FAQ
