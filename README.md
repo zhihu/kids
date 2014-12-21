@@ -112,7 +112,7 @@ First do the following:
     # Edit kids.conf, minimally logfile should be set to stdout 
     # to make `docker logs` work if you run kids in a container.
 
-#### Using docker to a kids container
+#### Using docker to make a kids container
 
 In the project root directory, run:
 
