@@ -65,7 +65,7 @@ kids 使用 redis 协议，现在你可以用 `redis-cli` 和它通信：
 <a name="production"></a>
 ## 部署到生产环境
 
-我们在每台服务器上安装 kids agent，用于转发日志到中心的 kids server，日志处理程序都从 kids server 订阅日志。
+我们在每台服务器上安装 kids agent，用于转发日志到中心的 kids server，部署后，可以使用任何一种语言的 redis 客户端 publish 日志到本地的 kids agent，而日志处理程序都从 kids server 订阅日志来消费。
 
 为了简化部署，用 deb 包或者 docker 容器。
 
