@@ -33,8 +33,8 @@ You need a complier with C++11 support like GCC 4.7 (or later) or [Clang](http:/
 Download a [source release](https://github.com/zhihu/kids/releases), then:
 	
 	tar xzf kids-VERSION.tar.gz
-	cd kids
-    ./configure
+	cd kids-VERSION
+	./configure
     make
     make test  # optional
     make install
@@ -91,7 +91,7 @@ Prerequisites:
 Download [kids source release](https://github.com/zhihu/kids/releases), then: 
 	
 	tar xzf kids-VERSION.tar.gz
-	cd kids
+	cd kids-VERSION
     cp samples/agent.conf debian/kids.conf
     # EDIT kids.conf, minimally fill in server address
 	make deb
