@@ -3,7 +3,7 @@
 VERSION="1.0.0"
 NAME="kids"
 PACKAGE_PATH=`pwd`/"${NAME}_${VERSION}_amd64.deb"
-LICENSE="BSD-2-clause"
+LICENSE="BSD-3-clause"
 MAINTAINER="opensource@zhihu.com"
 URL="https://github.com/zhihu/kids"
 DESCRIPTION="kids is a log aggregation system"
