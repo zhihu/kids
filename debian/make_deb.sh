@@ -13,6 +13,7 @@ TYPE="deb"
 
 CONF_FILE="kids.conf"
 LICENSE_FILE="../LICENSE"
+README="../README.md"
 SAMPLE_AGENT="../samples/agent.conf"
 SAMPLE_SERVER="../samples/server.conf"
 KIDS_BIN="../src/kids"
@@ -53,11 +54,13 @@ function prepare_dir {
   mkdir -p data/data/kidsbuf
   mkdir -p data/data/kids/logs
   cd ..
+  share_dir="${BUILD_DIR}/usr/share/kids"
   cp $KIDS_BIN  $BUILD_DIR/usr/local/bin/
   cp $CONF_FILE $BUILD_DIR/etc/kids.conf
-  cp $LICENSE_FILE $BUILD_DIR/usr/share/kids/LICENSE
-  cp $SAMPLE_AGENT $BUILD_DIR/usr/share/kids/samples/agent.conf
-  cp $SAMPLE_SERVER $BUILD_DIR/usr/share/kids/samples/server.conf
+  cp $LICENSE_FILE $share_dir
+  cp $README $share_dir
+  cp $SAMPLE_AGENT $share_dir/samples
+  cp $SAMPLE_SERVER $share_dir/samples
   DIR=(usr etc data)
 }
 
