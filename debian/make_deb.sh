@@ -2,7 +2,7 @@
 
 VERSION="1.0.0"
 NAME="kids"
-LICENSE="MIT"
+LICENSE="BSD-2-clause"
 MAINTAINER="opensource@zhihu.com"
 URL="https://github.com/zhihu/kids"
 DESCRIPTION="kids is a log aggregation system"
