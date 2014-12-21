@@ -22,7 +22,7 @@ It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) 
 ### Binaries
 
 kids [releases are available on the Github project releases page](https://github.com/zhihu/kids/releases).
-Binaries are available for Linux, with package for Debian based distributions.
+Binaries are available for 64bit Linux, with package for Debian based distributions.
 
 There is an example conf in Debian packages, but it is not useful in production, to deploy in production, see [Run in production](#production).
 
@@ -58,9 +58,9 @@ Because kids uses redis protocol, so you can use `redis-cli` to play with it, op
 In yet another terminal:
     
     $ redis-cli -p 3388
-    $ 127.0.0.1:3388> PUBLISH test message
+    $ 127.0.0.1:3388> PUBLISH kids.testtopic message
 
-`redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it.
+`redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it. On Linux, run `sudo apt-get install redis-tools`
 
 Full explanation of config file, see [here](doc/config.md).
 
@@ -82,7 +82,7 @@ then you do not have to make the package yourself, just download it from
 
 Prerequisites:
 
-* build-essential, libtool, automake for building the prject
+* build-essential, libtool, automake for building the project
 * [fpm](https://github.com/jordansissel/fpm) for packaging
 
 Instructions: 
@@ -95,12 +95,12 @@ For server, use the same deb package and overwrite /etc/kids.conf with server's 
 
 ### Using Docker
 
-You can use docker to build a kids container to run or use it to make a deb package and run kids outside
-a container.
+You can use docker to build a kids container to run or use it to make a deb package and run kids 
+outside a container.
 
 First prepare your config file:
 
-    # or samples/server.conf
+    # Modify samples/agent.conf or samples/server.conf
     copy samples/agent.conf debian/kids.conf
     # Edit kids.conf, minimally logfile should be set to stdout 
     # to make `docker logs` work if you run kids in a container.
@@ -125,6 +125,7 @@ Make sure you have built the zhihu/kids image, because the kids-deb depends on i
 You can now use the image to get a deb package.
 
     docker run -v /path/to/save/deb:/deb zhihu/kids-deb
+
 
 ## License
 
