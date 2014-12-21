@@ -19,10 +19,21 @@ It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) 
 
 ## Installation
 
+### Binaries
+
+kids [releases are available on the Github project releases page](https://github.com/zhihu/kids/releases).
+Binaries are available for Linux, with package for Debian based distributions.
+
+There is an example conf in Debian packages, but it is not useful in production, to deploy in production, see [Run in production](#production).
+
+### From Source
+
 You need a complier with C++11 support like GCC 4.7 (or later) or [Clang](http://clang.llvm.org).
 
-Download a [release](https://github.com/zhihu/kids/releases). Untar the tarball, then:
-
+Download a [source release](https://github.com/zhihu/kids/releases), then:
+	
+	tar xzf kids-VERSION_source.tar.gz
+	cd kids-VERSION
     ./configure
     make
     make test  # optional
@@ -55,27 +66,30 @@ Full explanation of config file, see [here](doc/config.md).
 
 Run `kids --help` for more running options.
 
+<a name="production"></a>
 ## Run in production
 
 In production, we deploy kids agent at every host, and assign a powerful server to kids server.
 
-We now support making deb package to simplify deployment, to do this, you need:
+To simplify deployment, use a package or a docker container.
+
+If you do not have to include config in the package, this may happen, 
+for example, you use puppet or saltstack to manage your configuration file, 
+then you do not have to make the package yourself, just download it from
+[kids's Github releases page](https://github.com/zhihu/kids/releases).
+
+### Creating packages
+
+Prerequisites:
 
 * build-essential, libtool, automake for building the prject
 * [fpm](https://github.com/jordansissel/fpm) for packaging
 
-### Steps
+Instructions: 
 
-    git clone https://github.com/zhihu/kids.git
-    cd kids
-    ./autogen.sh
-    ./configure
-    make
-    cp samples/agent.conf debian/
-    # EDIT the config file to fit into your environment: for agent, if you use samples/agent.conf then
-    # you only need to fill in kids server's hostname
-    cd debian
-    ./make_deb.sh
+    cp samples/agent.conf debian/kids.conf
+    # EDIT kids.conf, minimally fill in server address
+	make deb
 
 For server, use the same deb package and overwrite /etc/kids.conf with server's config file.
 
@@ -88,8 +102,8 @@ First prepare your config file:
 
     # or samples/server.conf
     copy samples/agent.conf debian/kids.conf
-    # Edit the config to fit in your needs, in the minimum
-    # you should log to stdout to make `docker logs` working
+    # Edit kids.conf, minimally logfile should be set to stdout 
+    # to make `docker logs` work if you run kids in a container.
 
 #### Build a kids container
 

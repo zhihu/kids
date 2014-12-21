@@ -6,4 +6,7 @@ all-am:
 install:
 	cd src && $(MAKE) install
 
+deb: all-am
+	cd debian && ./make_deb.sh
+
 test: check
