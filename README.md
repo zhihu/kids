@@ -86,7 +86,6 @@ See [here](doc/config.md).
 
 Prerequisites:
 
-* build-essential, libtool, automake for building the project
 * [fpm](https://github.com/jordansissel/fpm)
 
 Download [kids source release](https://github.com/zhihu/kids/releases), then: 
