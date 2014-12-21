@@ -34,6 +34,7 @@ Download a [source release](https://github.com/zhihu/kids/releases), then:
 	
 	tar xzf kids-VERSION_source.tar.gz
 	cd kids-VERSION
+	cd kids
     ./configure
     make
     make test  # optional
@@ -50,7 +51,7 @@ Kids comes with some sample config files in `samples/`, after building, simply r
 
     kids -c samples/dev.conf
 
-Because kids uses redis protocol, so you can use `redis-cli` to play with it, open another terminal:
+Because kids uses redis protocol, you can use `redis-cli` to play with it, open another terminal:
     
     $ redis-cli -p 3888
     $ 127.0.0.1:3388> PSUBSCRIBE *
@@ -62,7 +63,7 @@ In yet another terminal:
 
 `redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it.
 
-Full explanation of config file, see [here](doc/config.md).
+
 
 Run `kids --help` for more running options.
 
@@ -78,15 +79,20 @@ for example, you use puppet or saltstack to manage your configuration file,
 then you do not have to make the package yourself, just download it from
 [kids's Github releases page](https://github.com/zhihu/kids/releases).
 
+### Configuration
+
+See [here](doc/config.md).
+
 ### Creating packages
 
 Prerequisites:
 
-* build-essential, libtool, automake for building the prject
-* [fpm](https://github.com/jordansissel/fpm) for packaging
+* [fpm](https://github.com/jordansissel/fpm)
 
-Instructions: 
-
+Download [kids source release](https://github.com/zhihu/kids/releases), then: 
+	
+	tar xzf kids-VERSION.tar.gz
+	cd kids-VERSION
     cp samples/agent.conf debian/kids.conf
     # EDIT kids.conf, minimally fill in server address
 	make deb
@@ -95,19 +101,20 @@ For server, use the same deb package and overwrite /etc/kids.conf with server's 
 
 ### Using Docker
 
-You can use docker to build a kids container to run or use it to make a deb package and run kids outside
-a container.
+You can use docker to build a kids container to run or use it to make a deb package and run kids outside a container.
 
-First prepare your config file:
-
+First do the following:
+	
+	git clone https://github.com/zhihu/kids.git
+	cd kids
     # or samples/server.conf
     copy samples/agent.conf debian/kids.conf
     # Edit kids.conf, minimally logfile should be set to stdout 
     # to make `docker logs` work if you run kids in a container.
 
-#### Build a kids container
+#### Using docker to a kids container
 
-In project root directory, build the kids image:
+In the project root directory, run:
 
     docker build -t zhihu/kids .
 
@@ -115,9 +122,9 @@ Now you can run it like so:
 
     docker run -d -p 3388:3388 zhihu/kids
 
-#### Make a deb package
+#### Using docker to make a deb package
 
-Make sure you have built the zhihu/kids image, because the kids-deb depends on it.
+Make sure you have built the `zhihu/kids` image, because the `zhihu/kids-deb` depends on it.
 
     cd debian
     docker build -t zhihu/kid-deb .
@@ -125,6 +132,21 @@ Make sure you have built the zhihu/kids image, because the kids-deb depends on i
 You can now use the image to get a deb package.
 
     docker run -v /path/to/save/deb:/deb zhihu/kids-deb
+
+## Developer
+
+You will need
+
+* build-essential
+* libtool
+* automake
+* c++ compiler with c++ 11 support like gcc4.7+ or [Clang](http://clang.llvm.org)
+
+to build kids from source. Run the following to build kids:
+
+	./autogen.sh
+	./configure
+	make
 
 ## License
 
