@@ -69,7 +69,7 @@ Run `kids --help` for more running options.
 <a name="production"></a>
 ## Run in production
 
-In production, we deploy kids agent at every host, and assign a powerful server to kids server,
+In production, we deploy kids agent at every host, and assign a powerful server to kids server.
 
 To simplify deployment, use a package or a docker container.
 
