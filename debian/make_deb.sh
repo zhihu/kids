@@ -13,6 +13,8 @@ TYPE="deb"
 
 CONF_FILE="kids.conf"
 LICENSE_FILE="../LICENSE"
+SAMPLE_AGENT="../samples/agent.conf"
+SAMPLE_SERVER="../samples/server.conf"
 KIDS_BIN="../src/kids"
 KIDS_AFTER_INSTALL="kids.after_install"
 KIDS_BEFORE_REMOVE="kids.before_remove"
@@ -46,7 +48,7 @@ function prepare_dir {
   mkdir -p $BUILD_DIR
   cd $BUILD_DIR
   mkdir -p usr/local/bin
-  mkdir -p usr/share/kids
+  mkdir -p usr/share/kids/samples
   mkdir -p etc
   mkdir -p data/data/kidsbuf
   mkdir -p data/data/kids/logs
@@ -54,6 +56,8 @@ function prepare_dir {
   cp $KIDS_BIN  $BUILD_DIR/usr/local/bin/
   cp $CONF_FILE $BUILD_DIR/etc/kids.conf
   cp $LICENSE_FILE $BUILD_DIR/usr/share/kids/LICENSE
+  cp $SAMPLE_AGENT $BUILD_DIR/usr/share/kids/samples/agent.conf
+  cp $SAMPLE_SERVER $BUILD_DIR/usr/share/kids/samples/server.conf
   DIR=(usr etc data)
 }
 
