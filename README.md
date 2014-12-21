@@ -69,7 +69,8 @@ Run `kids --help` for more running options.
 <a name="production"></a>
 ## Run in production
 
-In production, we deploy kids agent at every host, and assign a powerful server to kids server.
+In production, we deploy kids agent at every host, which forwards log to a kids server, after deployment, you can use any redis client to publish log to local
+kids agent, and subscribe to kids server to consume the log.
 
 To simplify deployment, use a package or a docker container.
 
@@ -86,7 +87,6 @@ See [here](doc/config.md).
 
 Prerequisites:
 
-* build-essential, libtool, automake for building the project
 * [fpm](https://github.com/jordansissel/fpm)
 
 Download [kids source release](https://github.com/zhihu/kids/releases), then: 
