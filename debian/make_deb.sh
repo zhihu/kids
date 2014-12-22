@@ -2,7 +2,7 @@
 
 VERSION=$(awk -F',' '{print $2}' ../version.m4| tr -d ' ][)')
 NAME="kids"
-PACKAGE_PATH=`pwd`/"${NAME}_${VERSION}_amd64.deb"
+PACKAGE_PATH=$(cd ..; pwd)/"${NAME}_${VERSION}_amd64.deb"
 LICENSE="BSD-3-clause"
 MAINTAINER="opensource@zhihu.com"
 URL="https://github.com/zhihu/kids"
