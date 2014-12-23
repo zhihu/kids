@@ -32,6 +32,7 @@
 #include "sds.h"
 #include "util.h"
 #include "worker.h"
+#include "monitor.h"
 
 #define CLIENT_CLOSE_AFTER_REPLY 0x01
 #define CLIENT_CLOSE_ASAP 0x02
@@ -43,6 +44,8 @@
 #define KIDS_MAX_QUERYBUF_LEN (1024*1024*1024)
 
 #define KIDS_MAX_WRITE_PER_EVENT (1024*64)
+
+#define NOTUSED(V) ((void) V)
 
 class NetworkStore;
 

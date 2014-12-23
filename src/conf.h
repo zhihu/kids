@@ -47,6 +47,7 @@ struct KidsConfig {
   std::string max_clients;
   std::string worker_threads;
   std::string ignore_case;
+  std::string monitor;
   LimitConfig nlimit[3];
   StoreConfig *store;
 };
