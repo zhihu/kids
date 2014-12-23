@@ -41,6 +41,8 @@ static void SetKidsConfValue(KidsConfig *conf, KeyValue *kv, ParseContext *ctx) 
     conf->listen_port = kv->value[0];
   } else if (kv->key == "max_clients") {
     conf->max_clients = kv->value[0];
+  } else if (kv->key == "monitor") {
+    conf->monitor = kv->value[0];
   } else if (kv->key == "worker_threads") {
     conf->worker_threads = kv->value[0];
   } else if (kv->key == "ignore_case") {
@@ -158,4 +160,3 @@ ParseContext *ParseConfigFile(const std::string& filename) {
   fin.close();
   return ParseConfig(str);
 }
-

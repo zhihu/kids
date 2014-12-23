@@ -20,6 +20,7 @@ KIDS_SOURCE = @top_srcdir@/src/store/store.cc \
 							@top_srcdir@/src/store/prioritystore.cc\
 							@top_srcdir@/src/buffer.cc \
 							@top_srcdir@/src/client.cc \
+							@top_srcdir@/src/monitor.cc \
 							@top_srcdir@/src/conf.cc \
 							@top_srcdir@/src/filesystem.cc \
 							@top_srcdir@/src/logger.cc \

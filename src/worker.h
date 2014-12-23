@@ -6,6 +6,7 @@
 #include <list>
 #include <unordered_map>
 
+#include "monitor.h"
 #include "ae/libae.h"
 #include "common.h"
 
@@ -40,6 +41,7 @@ class Worker {
 
   aeEventLoop *eventl_;
   Statistic stat_;
+  Monitor::Stats stats;
   const int worker_id_;
 
   std::list<Pattern*> pubsub_patterns_;

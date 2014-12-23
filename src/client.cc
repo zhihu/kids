@@ -434,6 +434,14 @@ bool Client::ProcessCommand() {
     ProcessPSubscribe();
   } else if (!strcasecmp(command, "unsubscribe")) {
     ProcessUnSubscribe(true);
+  } else if (!strcasecmp(command, "topics")) {
+    ProcessTopics();
+  } else if (!strcasecmp(command, "topicinfo")) {
+    ProcessTopicInfo();
+  } else if (!strcasecmp(command, "lsactivetopic")) {
+    ProcessLsActiveTopic();
+  } else if (!strcasecmp(command, "lsalltopic")) {
+    ProcessLsAllTopic();
   } else if (!strcasecmp(command, "shutdown")) {
     ProcessShutdown();
   } else if (!strcasecmp(command, "select")) {
@@ -460,6 +468,7 @@ void Client::ProcessLog() {
   } else {
     LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
     worker_->stat_.msg_in++;
+    worker_->stats.IncreaseTopicOutflowCount(argv_[1]);
 
     if (kids->PutMessage(argv_[1], argv_[2], worker_->worker_id_)) {
       Reply(REP_CONE, REP_CONE_SIZE);
@@ -506,6 +515,73 @@ void Client::ProcessShutdown() {
 
 void Client::ProcessPing() {
   Reply(REP_PONG, REP_PONG_SIZE);
+}
+
+void Client::ProcessLsActiveTopic() {
+  Monitor::TopicSet active_topic = kids->monitor_->GetActiveTopics();
+  Buffer reply;
+  reply.append_printf("{\"active_topics\":[");
+  for (auto itr = active_topic.begin(); itr != active_topic.end(); itr++) {
+    reply.append_printf("\"%s\"", *itr);
+    if (std::next(itr) != active_topic.end())
+      reply.append_printf(",");
+  }
+  reply.append_printf("]}");
+  ReplyBulk(reply.data(), reply.size());
+}
+
+void Client::ProcessLsAllTopic() {
+  Monitor::TopicSet all_topic = kids->monitor_->GetAllTopics();
+  Buffer reply;
+  reply.append_printf("{\"all_topics\":[");
+  for (auto itr = all_topic.begin(); itr != all_topic.end(); itr++) {
+    reply.append_printf("\"%s\"", *itr);
+    if (std::next(itr) != all_topic.end())
+      reply.append_printf(",");
+  }
+  reply.append_printf("]}");
+  ReplyBulk(reply.data(), reply.size());
+}
+
+void Client::ProcessTopicInfo() {
+  if (argv_.size() != 2) {
+    ReplyErrorFormat("invalid argments of topicinfo");
+  } else {
+    LogDebug("processtopicinfo: %s", argv_[1]);
+    auto topic_count = kids->monitor_->GetTopicCount();
+
+    if (topic_count.find(argv_[1]) == topic_count.end()) {
+      ReplyErrorFormat("Topic: %s is not active now!", argv_[1]);
+    } else {
+      Buffer reply;
+      reply.append_printf("{\"topic\":");
+      reply.append_printf("\"%s\",", argv_[1]);
+      reply.append_printf("\"msg_in_ps\":%lu,", topic_count[argv_[1]].in);
+      reply.append_printf("\"msg_out_ps\":%lu", topic_count[argv_[1]].out);
+      reply.append_printf("}");
+      ReplyBulk(reply.data(), reply.size());
+    }
+
+    sdsfree(argv_[1]);
+    argv_[1] = NULL;
+  }
+}
+
+void Client::ProcessTopics() {
+  auto topic_count = kids->monitor_->GetTopicCount();
+  Buffer reply;
+  reply.append_printf("{\"topics\":[");
+  for (auto itr = topic_count.begin(); itr != topic_count.end(); itr++) {
+    reply.append_printf("{");
+    reply.append_printf("\"topic\":\"%s\",", itr->first);
+    reply.append_printf("\"msg_in_ps\":%lu,", itr->second.in);
+    reply.append_printf("\"msg_out_ps\":%lu", itr->second.out);
+    reply.append_printf("}");
+    if (std::next(itr) != topic_count.end())
+      reply.append_printf(",");
+  }
+  reply.append_printf("]}");
+  ReplyBulk(reply.data(), reply.size());
 }
 
 void Client::ProcessInfo() {

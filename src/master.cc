@@ -42,6 +42,7 @@ Master::Master(const KidsConfig *conf)
       conf->listen_host,
       atoi(conf->listen_port.c_str()),
       conf->ignore_case == "on",
+      conf->monitor == "on",
       {conf->nlimit[0], conf->nlimit[1], conf->nlimit[2]},
       1000000}
 {
@@ -86,7 +87,8 @@ Master *Master::Create(const KidsConfig *conf) {
   if (k->tcpfd_ > 0 && aeCreateFileEvent(k->eventl_, k->tcpfd_, AE_READABLE, AcceptTcpHandler, NULL) == AE_ERR) {
     LogError("oom when create file event");
   } else if (k->tcpfd_ > 0) {
-    LogInfo("The server is now ready to accept connections on %s:%d", k->config_.listen_host.c_str(), k->config_.listen_port);
+    LogInfo("The server is now ready to accept connections on %s:%d",
+            k->config_.listen_host.c_str(), k->config_.listen_port);
   }
 
   if (k->unixfd_ > 0 && aeCreateFileEvent(k->eventl_, k->unixfd_, AE_READABLE, AcceptUnixHandler, NULL) == AE_ERR) {
@@ -106,6 +108,10 @@ Master *Master::Create(const KidsConfig *conf) {
   }
 
   k->timeid_ = aeCreateTimeEvent(k->eventl_, 5000, ServerCron, k, NULL);
+
+  if (k->config_.monitor)
+    k->monitor_ = Monitor::Create(k->workers_);
+
   return k;
 }
 
@@ -173,6 +179,10 @@ void Master::Start() {
   for (auto it : workers_) {
     it->Start();
   }
+
+  if (kids->config_.monitor)
+    monitor_->Start();
+
   aeMain(eventl_);
 }
 

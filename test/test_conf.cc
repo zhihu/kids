@@ -75,6 +75,7 @@ TEST(TestParseConfig, TestFileServerConf) {
   EXPECT_EQ("3434", conf->listen_port);
   EXPECT_EQ("200", conf->max_clients);
   EXPECT_EQ("off", conf->ignore_case);
+  EXPECT_EQ("on", conf->monitor);
 
   StoreConfig *store = conf->store;
   EXPECT_EQ("multiple", store->type);

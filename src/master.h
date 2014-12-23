@@ -13,6 +13,7 @@ struct MessageQueue;
 typedef struct MessageQueue MQ;
 
 struct aeEventLoop;
+class Monitor;
 class Storer;
 class Worker;
 
@@ -24,6 +25,7 @@ class Master {
     std::string listen_host;
     int listen_port;
     bool ignore_case;
+    bool monitor;
     LimitConfig nlimit[3];
     uint64_t queue_limit;
   } Config;
@@ -42,6 +44,7 @@ class Master {
 
   const Config config_;
   Statistic stat_;
+  Monitor *monitor_;
 
  private:
   explicit Master(const KidsConfig *conf);

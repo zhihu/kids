@@ -5,8 +5,9 @@ DEPS_DIR = @top_srcdir@/deps
 KIDS_SOURCE = \
 	buffer.h conf.h kids.h msgqueue.h storer.h \
 	client.h constants.h logger.h parser.h util.h \
-	common.h filesystem.h master.h sds.h worker.h \
+	common.h filesystem.h master.h sds.h worker.h spinlock.h monitor.h \
 	kids.cc \
+	monitor.cc \
 	sds.c util.cc conf.cc logger.cc buffer.cc \
 	master.cc storer.cc worker.cc \
 	msgqueue.cc filesystem.cc \

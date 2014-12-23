@@ -62,6 +62,12 @@ class Client {
   void UnsubscribeAllTopics(bool notify);
   void UnsubscribeAllPatterns(bool notify);
 
+  // monitor handlers
+  void ProcessLsActiveTopic();
+  void ProcessLsAllTopic();
+  void ProcessTopicInfo();
+  void ProcessTopics();
+
   const int fd_;
 
   Buffer req_;
