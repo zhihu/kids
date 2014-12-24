@@ -51,7 +51,8 @@ Example:
     store priority {
       store null {
         topic kids.ignoretopic1;
-        topic kids.ignoretopic2;
+        topic test.debug;
+        topic debug.*;
       }
 
       store network {
