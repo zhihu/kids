@@ -468,7 +468,7 @@ void Client::ProcessLog() {
   } else {
     LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
     worker_->stat_.msg_in++;
-    worker_->stats.IncreaseTopicOutflowCount(argv_[1]);
+    worker_->stats.IncreaseTopicInflowCount(argv_[1], fd_);
 
     if (kids->PutMessage(argv_[1], argv_[2], worker_->worker_id_)) {
       Reply(REP_CONE, REP_CONE_SIZE);

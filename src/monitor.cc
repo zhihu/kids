@@ -48,29 +48,43 @@ void Monitor::Stop() {
   pthread_join(monitor_thread_, nullptr);
 }
 
+void Monitor::Cron() {
+  topic_lock.Lock();
+  UpdateTopicTable();
+  topic_lock.Unlock();
+}
+
 void Monitor::UpdateTopicTable() {
   TopicCount topic_count;
   TopicSet active_topics;
+  FdCount fds_by_topic;
 
   time_t start = time(nullptr);
   for (auto worker : workers_) {
     decltype(worker->stats.topic_count) count;
+    decltype(worker->stats.fds_by_topic) fds;
 
     worker->stats.splock.Lock();
     count.swap(worker->stats.topic_count);
+    fds.swap(worker->stats.fds_by_topic);
     worker->stats.splock.Unlock();
 
     for (auto &topic : count) {
       auto itr = topic_table_.find(topic.first);
+      sds topic_dup;
       if (itr != topic_table_.end()) {  // fount it
         topic_count[topic.first].Add(topic.second);
-        active_topics.insert(*itr);
+        topic_dup = *itr;
       } else {
-        sds topic_dup = sdsdup(topic.first);
+        topic_dup = sdsdup(topic.first);
         topic_table_.insert(topic_dup);
         topic_count_.emplace(topic_dup, topic.second);
-        active_topics.insert(topic_dup);
       }
+      active_topics.insert(topic_dup);
+      fds_by_topic[topic_dup].inflow.insert(fds[topic_dup].inflow.begin(),
+                                            fds[topic_dup].inflow.end());
+      fds_by_topic[topic_dup].outflow.insert(fds[topic_dup].outflow.begin(),
+                                             fds[topic_dup].outflow.end());
     }
   }
 
@@ -82,7 +96,8 @@ void Monitor::UpdateTopicTable() {
     topic.second.out /= time_gap;
   }
 
-  /* rvalue reference in c++ 11 */
+/* rvalue reference in c++ 11 */
+  fds_by_topic_.swap(fds_by_topic);
   topic_count_.swap(topic_count);
   active_topics_.swap(active_topics);
 }
@@ -106,10 +121,4 @@ Monitor::TopicCount Monitor::GetTopicCount() {
   auto topic_count = topic_count_;
   topic_lock.Unlock();
   return topic_count;
-}
-
-void Monitor::Cron() {
-  topic_lock.Lock();
-  UpdateTopicTable();
-  topic_lock.Unlock();
 }
