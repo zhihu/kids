@@ -11,7 +11,7 @@ RUN	apt-get update && \
 WORKDIR /kids
 
 COPY . /kids
-RUN ./configure && make
+RUN ./autogen.sh && ./configure && make
 
 EXPOSE :3388
 
