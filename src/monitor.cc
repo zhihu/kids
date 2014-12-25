@@ -49,9 +49,9 @@ void Monitor::Stop() {
 }
 
 void Monitor::Cron() {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   UpdateTopicTable();
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
 }
 
 void Monitor::UpdateTopicTable() {
@@ -100,62 +100,62 @@ void Monitor::UpdateTopicTable() {
 }
 
 Monitor::TopicSet Monitor::GetActiveTopics() {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   auto active_topic = active_topics_;
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
   return active_topic;
 }
 
 Monitor::TopicSet Monitor::GetAllTopics() {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   auto all_topic = topic_table_;
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
   return all_topic;
 }
 
 Monitor::TopicCount Monitor::GetTopicCount() {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   auto topic_count = topic_count_;
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
   return topic_count;
 }
 
 void Monitor::RegisterClient(int fd, const char *host, int port) {
-  host_lock.Lock();
-  clients[fd] = { std::string(host), port };
-  host_lock.Unlock();
+  host_lock_.Lock();
+  clients_[fd] = { std::string(host), port };
+  host_lock_.Unlock();
 }
 
 void Monitor::UnRegisterClient(int fd) {
-  host_lock.Lock();
-  auto itr = clients.find(fd);
-  if (itr != clients.end()) {
-    clients.erase(fd);
+  host_lock_.Lock();
+  auto itr = clients_.find(fd);
+  if (itr != clients_.end()) {
+    clients_.erase(fd);
   }
-  host_lock.Unlock();
+  host_lock_.Unlock();
 }
 
 std::vector<Monitor::ClientAddress> Monitor::GetInflowClients(const sds topic) {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   auto in = fds_by_topic_[topic].inflow;
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
   std::vector<Monitor::ClientAddress> res;
-  host_lock.Lock();
+  host_lock_.Lock();
   for (auto fd : in) {
-    res.push_back(clients[fd]);
+    res.push_back(clients_[fd]);
   }
-  host_lock.Unlock();
+  host_lock_.Unlock();
   return res;
 }
 std::vector<Monitor::ClientAddress> Monitor::GetOutflowClients(const sds topic) {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   auto out = fds_by_topic_[topic].outflow;
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
   std::vector<Monitor::ClientAddress> res;
-  host_lock.Lock();
+  host_lock_.Lock();
   for (auto fd : out) {
-    res.push_back(clients[fd]);
+    res.push_back(clients_[fd]);
   }
-  host_lock.Unlock();
+  host_lock_.Unlock();
   return res;
 }

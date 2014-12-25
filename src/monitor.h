@@ -111,11 +111,11 @@ class Monitor {
   aeEventLoop *eventl_;
   long long cron_id_;
 
-  Spinlock topic_lock;
-  Spinlock host_lock;
+  Spinlock topic_lock_;
+  Spinlock host_lock_;
   pthread_t monitor_thread_;
 
-  std::unordered_map<int, ClientAddress> clients;
+  std::unordered_map<int, ClientAddress> clients_;
 
   FdCount    fds_by_topic_;
   TopicSet   active_topics_;
