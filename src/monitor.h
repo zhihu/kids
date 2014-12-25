@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "./common.h"
-#include "./spinlock.h"
+#include "common.h"
+#include "spinlock.h"
 
 class Worker;
 class Client;
@@ -20,18 +20,18 @@ class Monitor {
   static const uint32_t kCronPeriod   = 5;  // 5 second
   static const uint32_t kCronPeriodms = kCronPeriod * 1000;  // 5000 ms
 
-  struct FlowCount {
-    uint32_t in;
-    uint32_t out;
-    void Add(const FlowCount &count) {
-      in += count.in;
-      out += count.out;
-    }
-  };
+  struct TopicCount {
+    uint32_t inflow_count;
+    uint32_t outflow_count;
+    std::unordered_set<int> inflow_clients;
+    std::unordered_set<int> outflow_clients;
 
-  struct FdSet {
-    std::unordered_set<int> inflow;
-    std::unordered_set<int> outflow;
+    void Merge(const TopicCount &count) {
+      inflow_count += count.inflow_count;
+      outflow_count += count.outflow_count;
+      inflow_clients.insert(count.inflow_clients.begin(), count.inflow_clients.end());
+      outflow_clients.insert(count.outflow_clients.begin(), count.outflow_clients.end());
+    }
   };
 
   struct ClientAddress {
@@ -39,29 +39,27 @@ class Monitor {
     int port;
   };
 
-  using TopicCount = std::unordered_map<sds, FlowCount, SdsHasher, SdsEqual>;
+  using TopicStats = std::unordered_map<sds, TopicCount, SdsHasher, SdsEqual>;
   using TopicSet   = std::unordered_set<sds, SdsHasher, SdsEqual>;
-  using FdCount    = std::unordered_map<sds, FdSet, SdsHasher, SdsEqual>;
 
   struct Stats {
-    TopicCount topic_count;
-    TopicSet topic_table;
-    Spinlock splock;
-    FdCount fds_by_topic;
+    TopicStats topic_stats;
+    TopicSet   topic_table;
+    Spinlock   splock;
 
     void IncreaseTopicInflowCount(const sds topic, int fd) {
-      sds topic_in_table = UpdateTable(topic);
+      sds local_topic = LocalizeTopic(topic);
       splock.Lock();
-      topic_count[topic_in_table].in += 1;
-      fds_by_topic[topic_in_table].inflow.insert(fd);
+      topic_stats[local_topic].inflow_count += 1;
+      topic_stats[local_topic].inflow_clients.insert(fd);
       splock.Unlock();
     }
 
     void IncreaseTopicOutflowCount(const sds topic, int fd) {
-      sds topic_in_table = UpdateTable(topic);
+      sds local_topic = LocalizeTopic(topic);
       splock.Lock();
-      topic_count[topic_in_table].out += 1;
-      fds_by_topic[topic_in_table].outflow.insert(fd);
+      topic_stats[local_topic].outflow_count += 1;
+      topic_stats[local_topic].outflow_clients.insert(fd);
       splock.Unlock();
     }
 
@@ -72,16 +70,16 @@ class Monitor {
     }
 
    private:
-    sds UpdateTable(const sds topic) {
-      sds topic_in_table;
+    sds LocalizeTopic(const sds topic) {
+      sds local_topic;
       auto itr = topic_table.find(topic);
       if (itr == topic_table.end()) {
-        topic_in_table = sdsdup(topic);
-        topic_table.insert(topic_in_table);
+        local_topic = sdsdup(topic);
+        topic_table.insert(local_topic);
       } else {
-        topic_in_table = *itr;
+        local_topic = *itr;
       }
-      return topic_in_table;
+      return local_topic;
     }
   };
 
@@ -94,11 +92,12 @@ class Monitor {
 
   TopicSet GetActiveTopics();
   TopicSet GetAllTopics();
-  TopicCount GetTopicCount();
-  std::vector<ClientAddress> GetInflowClients(const sds topic);
-  std::vector<ClientAddress> GetOutflowClients(const sds topic);
+  TopicStats GetTopicStats();
+  bool GetTopicCount(const sds topic, TopicCount &topic_count);
+  std::vector<ClientAddress> GetPublisher(const sds topic);
+  std::vector<ClientAddress> GetSubscriber(const sds topic);
 
-  void UpdateTopicTable();
+  void CollectStats();
 
   void RegisterClient(int fd, const char *host, int port);
   void UnRegisterClient(int fd);
@@ -117,10 +116,8 @@ class Monitor {
 
   std::unordered_map<int, ClientAddress> clients_;
 
-  FdCount    fds_by_topic_;
-  TopicSet   active_topics_;
+  TopicStats topic_stats_;
   TopicSet   topic_table_;
-  TopicCount topic_count_;
 };
 
 #endif  // __KIDS_MONITOR_H_

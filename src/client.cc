@@ -552,8 +552,8 @@ void Client::ProcessClientsOf() {
     ReplyErrorFormat("invalid argments of clientsof");
   } else {
     sds topic = argv_[1];
-    auto inflow_clients = kids->monitor_->GetInflowClients(topic);
-    auto outflow_clients = kids->monitor_->GetOutflowClients(topic);
+    auto inflow_clients = kids->monitor_->GetPublisher(topic);
+    auto outflow_clients = kids->monitor_->GetSubscriber(topic);
     Buffer reply;
     reply.append_printf("{\"topic\":\"%s\"", topic);
     reply.append_printf(",");
@@ -582,18 +582,18 @@ void Client::ProcessTopicInfo() {
     ReplyErrorFormat("invalid argments of topicinfo");
   } else {
     LogDebug("processtopicinfo: %s", argv_[1]);
-    auto topic_count = kids->monitor_->GetTopicCount();
+    Monitor::TopicCount topic_count;
 
-    if (topic_count.find(argv_[1]) == topic_count.end()) {
-      ReplyErrorFormat("Topic: %s is not active now!", argv_[1]);
-    } else {
+    if (kids->monitor_->GetTopicCount(argv_[1], topic_count)) {
       Buffer reply;
       reply.append_printf("{\"topic\":");
       reply.append_printf("\"%s\",", argv_[1]);
-      reply.append_printf("\"msg_in_ps\":%lu,", topic_count[argv_[1]].in);
-      reply.append_printf("\"msg_out_ps\":%lu", topic_count[argv_[1]].out);
+      reply.append_printf("\"msg_in_ps\":%lu,", topic_count.inflow_count);
+      reply.append_printf("\"msg_out_ps\":%lu", topic_count.outflow_count);
       reply.append_printf("}");
       ReplyBulk(reply.data(), reply.size());
+    } else {
+      ReplyErrorFormat("Topic: %s is not active now!", argv_[1]);
     }
 
     sdsfree(argv_[1]);
@@ -602,16 +602,16 @@ void Client::ProcessTopicInfo() {
 }
 
 void Client::ProcessTopics() {
-  auto topic_count = kids->monitor_->GetTopicCount();
+  auto topic_stats = kids->monitor_->GetTopicStats();
   Buffer reply;
   reply.append_printf("{\"topics\":[");
-  for (auto itr = topic_count.begin(); itr != topic_count.end(); itr++) {
+  for (auto itr = topic_stats.begin(); itr != topic_stats.end(); itr++) {
     reply.append_printf("{");
     reply.append_printf("\"topic\":\"%s\",", itr->first);
-    reply.append_printf("\"msg_in_ps\":%lu,", itr->second.in);
-    reply.append_printf("\"msg_out_ps\":%lu", itr->second.out);
+    reply.append_printf("\"msg_in_ps\":%lu,", itr->second.inflow_count);
+    reply.append_printf("\"msg_out_ps\":%lu", itr->second.outflow_count);
     reply.append_printf("}");
-    if (std::next(itr) != topic_count.end())
+    if (std::next(itr) != topic_stats.end())
       reply.append_printf(",");
   }
   reply.append_printf("]}");
