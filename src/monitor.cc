@@ -59,7 +59,6 @@ void Monitor::UpdateTopicTable() {
   TopicSet active_topics;
   FdCount fds_by_topic;
 
-
   for (auto worker : workers_) {
     decltype(worker->stats.topic_count) count;
     decltype(worker->stats.fds_by_topic) fds;
@@ -71,20 +70,20 @@ void Monitor::UpdateTopicTable() {
 
     for (auto &topic : count) {
       auto itr = topic_table_.find(topic.first);
-      sds topic_dup;
+      sds topic_in_table;
       if (itr != topic_table_.end()) {  // fount it
-        topic_count[topic.first].Add(topic.second);
-        topic_dup = *itr;
+        topic_in_table = *itr;
+        topic_count[topic_in_table].Add(topic.second);
       } else {
-        topic_dup = sdsdup(topic.first);
-        topic_table_.insert(topic_dup);
-        topic_count_.emplace(topic_dup, topic.second);
+        topic_in_table = sdsdup(topic.first);
+        topic_table_.insert(topic_in_table);
+        topic_count_.emplace(topic_in_table, topic.second);
       }
-      active_topics.insert(topic_dup);
-      fds_by_topic[topic_dup].inflow.insert(fds[topic_dup].inflow.begin(),
-                                            fds[topic_dup].inflow.end());
-      fds_by_topic[topic_dup].outflow.insert(fds[topic_dup].outflow.begin(),
-                                             fds[topic_dup].outflow.end());
+      active_topics.insert(topic_in_table);
+      fds_by_topic[topic_in_table].inflow.insert(fds[topic_in_table].inflow.begin(),
+                                                 fds[topic_in_table].inflow.end());
+      fds_by_topic[topic_in_table].outflow.insert(fds[topic_in_table].outflow.begin(),
+                                                  fds[topic_in_table].outflow.end());
     }
   }
 
