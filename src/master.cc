@@ -12,7 +12,7 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     return;
   }
   LogInfo("Accepted %s:%d", ip, port);
-
+  kids->monitor_->RegisterClient(cfd, ip, port);
   kids->AssignNewConnection(cfd);
 }
 
@@ -124,6 +124,7 @@ Master::~Master() {
     delete it;
   }
   delete storer_;
+  delete monitor_;
 
   if (unixfd_ > 0) {
     close(unixfd_);
@@ -187,7 +188,11 @@ void Master::Start() {
 }
 
 void Master::Stop() {
+
   eventl_->stop = 1;
+  if (config_.monitor)
+    monitor_->Stop();
+
   for (auto it : workers_) {
     it->Stop();
   }

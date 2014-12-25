@@ -68,6 +68,7 @@ class Client {
   void ProcessLsAllTopic();
   void ProcessTopicInfo();
   void ProcessTopics();
+  void ProcessClientsOf();
 
   const int fd_;
 

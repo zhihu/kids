@@ -116,6 +116,8 @@ Client::~Client() {
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_READABLE);
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_WRITABLE);
 
+  kids->monitor_->UnRegisterClient(fd_);
+
   close(fd_);
 
   UnsubscribeAllTopics(false);
@@ -442,6 +444,8 @@ bool Client::ProcessCommand() {
     ProcessLsActiveTopic();
   } else if (!strcasecmp(command, "lsalltopic")) {
     ProcessLsAllTopic();
+  } else if (!strcasecmp(command, "clientsof")) {
+    ProcessClientsOf();
   } else if (!strcasecmp(command, "shutdown")) {
     ProcessShutdown();
   } else if (!strcasecmp(command, "select")) {
@@ -541,6 +545,36 @@ void Client::ProcessLsAllTopic() {
   }
   reply.append_printf("]}");
   ReplyBulk(reply.data(), reply.size());
+}
+
+void Client::ProcessClientsOf() {
+  if (argv_.size() != 2) {
+    ReplyErrorFormat("invalid argments of clientsof");
+  } else {
+    sds topic = argv_[1];
+    auto inflow_clients = kids->monitor_->GetInflowClients(topic);
+    auto outflow_clients = kids->monitor_->GetOutflowClients(topic);
+    Buffer reply;
+    reply.append_printf("{\"topic\":\"%s\"", topic);
+    reply.append_printf(",");
+    reply.append_printf("\"inflow_clients\":[");
+    for (auto itr = inflow_clients.begin(); itr != inflow_clients.end(); itr++) {
+      reply.append_printf("{\"host\":\"%s\", \"port\":\"%d\"}", itr->host.c_str(), itr->port);
+      if (std::next(itr) != inflow_clients.end())
+        reply.append_printf(",");
+    }
+    reply.append_printf("],");
+    reply.append_printf("\"outflow_clients\":[");
+    for (auto itr = outflow_clients.begin(); itr != outflow_clients.end(); itr++) {
+      reply.append_printf("{\"host\":\"%s\", \"port\":\"%d\"}", itr->host.c_str(), itr->port);
+      if (std::next(itr) != outflow_clients.end())
+        reply.append_printf(",");
+    }
+    reply.append_printf("]}");
+    ReplyBulk(reply.data(), reply.size());
+    sdsfree(argv_[1]);
+    argv_[1] = NULL;
+  }
 }
 
 void Client::ProcessTopicInfo() {

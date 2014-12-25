@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdarg>
 #include <cstring>
+#include <cstdlib>
 
 #include <algorithm>
 #include <string>

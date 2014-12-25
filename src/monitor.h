@@ -1,8 +1,8 @@
 #ifndef __KIDS_MONITOR_H_
 #define __KIDS_MONITOR_H_
 
-#include <deque>
 #include <vector>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -17,8 +17,8 @@ struct aeEventLoop;
 
 class Monitor {
  public:
-  static const uint32_t kCronPeriod   = 10;  // 10 second
-  static const uint32_t kCronPeriodms = kCronPeriod * 1000;  // 1e4 ms
+  static const uint32_t kCronPeriod   = 5;  // 5 second
+  static const uint32_t kCronPeriodms = kCronPeriod * 1000;  // 5000 ms
 
   struct FlowCount {
     uint32_t in;
@@ -34,9 +34,14 @@ class Monitor {
     std::unordered_set<int> outflow;
   };
 
+  struct ClientAddress {
+    std::string host;
+    int port;
+  };
+
   using TopicCount = std::unordered_map<sds, FlowCount, SdsHasher, SdsEqual>;
-  using TopicSet = std::unordered_set<sds, SdsHasher, SdsEqual>;
-  using FdCount = std::unordered_map<sds, FdSet, SdsHasher, SdsEqual>;
+  using TopicSet   = std::unordered_set<sds, SdsHasher, SdsEqual>;
+  using FdCount    = std::unordered_map<sds, FdSet, SdsHasher, SdsEqual>;
 
   struct Stats {
     TopicCount topic_count;
@@ -68,15 +73,15 @@ class Monitor {
 
    private:
     sds UpdateTable(const sds topic) {
-      sds dup_topic;
+      sds topic_in_table;
       auto itr = topic_table.find(topic);
       if (itr == topic_table.end()) {
-        dup_topic = sdsdup(topic);
-        topic_table.insert(dup_topic);
+        topic_in_table = sdsdup(topic);
+        topic_table.insert(topic_in_table);
       } else {
-        dup_topic = *itr;
+        topic_in_table = *itr;
       }
-      return dup_topic;
+      return topic_in_table;
     }
   };
 
@@ -90,8 +95,13 @@ class Monitor {
   TopicSet GetActiveTopics();
   TopicSet GetAllTopics();
   TopicCount GetTopicCount();
+  std::vector<ClientAddress> GetInflowClients(const sds topic);
+  std::vector<ClientAddress> GetOutflowClients(const sds topic);
 
   void UpdateTopicTable();
+
+  void RegisterClient(int fd, const char *host, int port);
+  void UnRegisterClient(int fd);
 
  private:
   Monitor();
@@ -102,11 +112,14 @@ class Monitor {
   long long cron_id_;
 
   Spinlock topic_lock;
+  Spinlock host_lock;
   pthread_t monitor_thread_;
 
-  FdCount fds_by_topic_;
-  TopicSet active_topics_;
-  TopicSet topic_table_;
+  std::unordered_map<int, ClientAddress> clients;
+
+  FdCount    fds_by_topic_;
+  TopicSet   active_topics_;
+  TopicSet   topic_table_;
   TopicCount topic_count_;
 };
 

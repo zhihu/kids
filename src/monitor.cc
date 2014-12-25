@@ -59,7 +59,7 @@ void Monitor::UpdateTopicTable() {
   TopicSet active_topics;
   FdCount fds_by_topic;
 
-  time_t start = time(nullptr);
+
   for (auto worker : workers_) {
     decltype(worker->stats.topic_count) count;
     decltype(worker->stats.fds_by_topic) fds;
@@ -88,15 +88,12 @@ void Monitor::UpdateTopicTable() {
     }
   }
 
-  auto time_gap = time(nullptr) - start;
-  time_gap = (time_gap == 0 ? 1 : time_gap);
-
   for (auto &topic : topic_count) {
-    topic.second.in /= time_gap;
-    topic.second.out /= time_gap;
+    topic.second.in /= kCronPeriod;
+    topic.second.out /= kCronPeriod;
   }
 
-/* rvalue reference in c++ 11 */
+  /* rvalue reference in c++ 11 */
   fds_by_topic_.swap(fds_by_topic);
   topic_count_.swap(topic_count);
   active_topics_.swap(active_topics);
@@ -121,4 +118,44 @@ Monitor::TopicCount Monitor::GetTopicCount() {
   auto topic_count = topic_count_;
   topic_lock.Unlock();
   return topic_count;
+}
+
+void Monitor::RegisterClient(int fd, const char *host, int port) {
+  host_lock.Lock();
+  clients[fd] = { std::string(host), port };
+  host_lock.Unlock();
+}
+
+void Monitor::UnRegisterClient(int fd) {
+  host_lock.Lock();
+  auto itr = clients.find(fd);
+  if (itr != clients.end()) {
+    clients.erase(fd);
+  }
+  host_lock.Unlock();
+}
+
+std::vector<Monitor::ClientAddress> Monitor::GetInflowClients(const sds topic) {
+  topic_lock.Lock();
+  auto in = fds_by_topic_[topic].inflow;
+  topic_lock.Unlock();
+  std::vector<Monitor::ClientAddress> res;
+  host_lock.Lock();
+  for (auto fd : in) {
+    res.push_back(clients[fd]);
+  }
+  host_lock.Unlock();
+  return res;
+}
+std::vector<Monitor::ClientAddress> Monitor::GetOutflowClients(const sds topic) {
+  topic_lock.Lock();
+  auto out = fds_by_topic_[topic].outflow;
+  topic_lock.Unlock();
+  std::vector<Monitor::ClientAddress> res;
+  host_lock.Lock();
+  for (auto fd : out) {
+    res.push_back(clients[fd]);
+  }
+  host_lock.Unlock();
+  return res;
 }
