@@ -1,13 +1,13 @@
 #ifndef __KIDS_MONITOR_H_
 #define __KIDS_MONITOR_H_
 
-#include <deque>
 #include <vector>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "./common.h"
-#include "./spinlock.h"
+#include "common.h"
+#include "spinlock.h"
 
 class Worker;
 class Client;
@@ -17,58 +17,69 @@ struct aeEventLoop;
 
 class Monitor {
  public:
-  static const uint32_t kCronPeriod   = 10;  // 10 second
-  static const uint32_t kCronPeriodms = kCronPeriod * 1000;  // 1e4 ms
+  static const uint32_t kCronPeriod   = 5;  // 5 second
+  static const uint32_t kCronPeriodms = kCronPeriod * 1000;  // 5000 ms
 
-  struct FlowCount {
-    uint32_t in;
-    uint32_t out;
-    void Add(const FlowCount &count) {
-      in += count.in;
-      out += count.out;
+  struct TopicCount {
+    uint32_t inflow_count;
+    uint32_t outflow_count;
+    std::unordered_set<int> inflow_clients;
+    std::unordered_set<int> outflow_clients;
+
+    void Merge(const TopicCount &count) {
+      inflow_count += count.inflow_count;
+      outflow_count += count.outflow_count;
+      inflow_clients.insert(count.inflow_clients.begin(), count.inflow_clients.end());
+      outflow_clients.insert(count.outflow_clients.begin(), count.outflow_clients.end());
     }
   };
 
-  using TopicCount = std::unordered_map<sds, FlowCount, SdsHasher, SdsEqual>;
-  using TopicSet = std::unordered_set<sds, SdsHasher, SdsEqual>;
+  struct ClientAddress {
+    std::string host;
+    int port;
+  };
+
+  using TopicStats = std::unordered_map<sds, TopicCount, SdsHasher, SdsEqual>;
+  using TopicSet   = std::unordered_set<sds, SdsHasher, SdsEqual>;
 
   struct Stats {
-    TopicCount topic_count;
-    TopicSet topic_table;
-    Spinlock splock;
+    TopicStats topic_stats;
+    TopicSet   topic_table;
+    Spinlock   splock;
 
-    void IncreaseTopicInflowCount(const sds topic) {
-      sds dup_topic;
-      auto itr = topic_table.find(topic);
-      if (itr == topic_table.end()) {
-        dup_topic = sdsdup(topic);
-        topic_table.insert(dup_topic);
-      } else {
-        dup_topic = *itr;
-      }
+    void IncreaseTopicInflowCount(const sds topic, int fd) {
+      sds local_topic = LocalizeTopic(topic);
       splock.Lock();
-      topic_count[dup_topic].in += 1;
+      topic_stats[local_topic].inflow_count += 1;
+      topic_stats[local_topic].inflow_clients.insert(fd);
       splock.Unlock();
     }
 
-    void IncreaseTopicOutflowCount(const sds topic) {
-      sds dup_topic;
-      auto itr = topic_table.find(topic);
-      if (itr == topic_table.end()) {
-        dup_topic = sdsdup(topic);
-        topic_table.insert(dup_topic);
-      } else {
-        dup_topic = *itr;
-      }
+    void IncreaseTopicOutflowCount(const sds topic, int fd) {
+      sds local_topic = LocalizeTopic(topic);
       splock.Lock();
-      topic_count[dup_topic].out += 1;
+      topic_stats[local_topic].outflow_count += 1;
+      topic_stats[local_topic].outflow_clients.insert(fd);
       splock.Unlock();
     }
 
-    ~Stats(){
+    ~Stats() {
       for (auto &topic : topic_table) {
         sdsfree(topic);
       }
+    }
+
+   private:
+    sds LocalizeTopic(const sds topic) {
+      sds local_topic;
+      auto itr = topic_table.find(topic);
+      if (itr == topic_table.end()) {
+        local_topic = sdsdup(topic);
+        topic_table.insert(local_topic);
+      } else {
+        local_topic = *itr;
+      }
+      return local_topic;
     }
   };
 
@@ -81,9 +92,15 @@ class Monitor {
 
   TopicSet GetActiveTopics();
   TopicSet GetAllTopics();
-  TopicCount GetTopicCount();
+  TopicStats GetTopicStats();
+  bool GetTopicCount(const sds topic, TopicCount &topic_count);
+  std::vector<ClientAddress> GetPublisher(const sds topic);
+  std::vector<ClientAddress> GetSubscriber(const sds topic);
 
-  void UpdateTopicTable();
+  void CollectStats();
+
+  void RegisterClient(int fd, const char *host, int port);
+  void UnRegisterClient(int fd);
 
  private:
   Monitor();
@@ -93,12 +110,14 @@ class Monitor {
   aeEventLoop *eventl_;
   long long cron_id_;
 
-  Spinlock topic_lock;
+  Spinlock topic_lock_;
+  Spinlock host_lock_;
   pthread_t monitor_thread_;
 
-  TopicSet active_topics_;
-  TopicSet topic_table_;
-  TopicCount topic_count_;
+  std::unordered_map<int, ClientAddress> clients_;
+
+  TopicStats topic_stats_;
+  TopicSet   topic_table_;
 };
 
 #endif  // __KIDS_MONITOR_H_

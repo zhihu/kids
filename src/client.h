@@ -24,6 +24,7 @@ class Client {
   void ReceivePatternMessage(const sds &topic, const sds &content, const sds &pattern);
 
   std::string ToString();
+  int GetFd() { return fd_; }
 
  private:
   typedef std::unordered_set<sds, SdsHasher, SdsEqual> BufferSet;
@@ -67,6 +68,7 @@ class Client {
   void ProcessLsAllTopic();
   void ProcessTopicInfo();
   void ProcessTopics();
+  void ProcessClientsOf();
 
   const int fd_;
 

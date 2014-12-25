@@ -48,68 +48,114 @@ void Monitor::Stop() {
   pthread_join(monitor_thread_, nullptr);
 }
 
-void Monitor::UpdateTopicTable() {
-  TopicCount topic_count;
-  TopicSet active_topics;
+void Monitor::Cron() {
+  topic_lock_.Lock();
+  CollectStats();
+  topic_lock_.Unlock();
+}
 
-  time_t start = time(nullptr);
+void Monitor::CollectStats() {
+  TopicStats topic_stats;
+
   for (auto worker : workers_) {
-    decltype(worker->stats.topic_count) count;
+    decltype(worker->stats.topic_stats) worker_stats;
 
     worker->stats.splock.Lock();
-    count.swap(worker->stats.topic_count);
+    worker_stats.swap(worker->stats.topic_stats);
     worker->stats.splock.Unlock();
 
-    for (auto &topic : count) {
+    for (auto &topic : worker_stats) {
       auto itr = topic_table_.find(topic.first);
-      if (itr != topic_table_.end()) {  // fount it
-        topic_count[topic.first].Add(topic.second);
-        active_topics.insert(*itr);
+      sds local_topic;
+      if (itr != topic_table_.end()) {
+        local_topic = *itr;
+        topic_stats[local_topic].Merge(topic.second);
       } else {
-        sds topic_dup = sdsdup(topic.first);
-        topic_table_.insert(topic_dup);
-        topic_count_.emplace(topic_dup, topic.second);
-        active_topics.insert(topic_dup);
+        local_topic = sdsdup(topic.first);
+        topic_table_.insert(local_topic);
+        topic_stats.emplace(local_topic, topic.second);
       }
     }
   }
 
-  auto time_gap = time(nullptr) - start;
-  time_gap = (time_gap == 0 ? 1 : time_gap);
-
-  for (auto &topic : topic_count) {
-    topic.second.in /= time_gap;
-    topic.second.out /= time_gap;
+  for (auto &topic : topic_stats) {
+    topic.second.inflow_count /= kCronPeriod;
+    topic.second.outflow_count /= kCronPeriod;
   }
 
   /* rvalue reference in c++ 11 */
-  topic_count_.swap(topic_count);
-  active_topics_.swap(active_topics);
+  topic_stats_.swap(topic_stats);
 }
 
 Monitor::TopicSet Monitor::GetActiveTopics() {
-  topic_lock.Lock();
-  auto active_topic = active_topics_;
-  topic_lock.Unlock();
+  topic_lock_.Lock();
+  TopicSet active_topic;
+  for (auto &topic : topic_stats_)
+    active_topic.insert(topic.first);
+  topic_lock_.Unlock();
   return active_topic;
 }
 
 Monitor::TopicSet Monitor::GetAllTopics() {
-  topic_lock.Lock();
+  topic_lock_.Lock();
   auto all_topic = topic_table_;
-  topic_lock.Unlock();
+  topic_lock_.Unlock();
   return all_topic;
 }
 
-Monitor::TopicCount Monitor::GetTopicCount() {
-  topic_lock.Lock();
-  auto topic_count = topic_count_;
-  topic_lock.Unlock();
-  return topic_count;
+Monitor::TopicStats Monitor::GetTopicStats() {
+  topic_lock_.Lock();
+  auto topic_stats = topic_stats_;
+  topic_lock_.Unlock();
+  return topic_stats;
 }
 
-void Monitor::Cron() {
-  topic_lock.Lock();
-  UpdateTopicTable();
-  topic_lock.Unlock();
+void Monitor::RegisterClient(int fd, const char *host, int port) {
+  host_lock_.Lock();
+  clients_[fd] = { std::string(host), port };
+  host_lock_.Unlock();
+}
+
+void Monitor::UnRegisterClient(int fd) {
+  host_lock_.Lock();
+  clients_.erase(fd);
+  host_lock_.Unlock();
+}
+
+bool Monitor::GetTopicCount(const sds topic, Monitor::TopicCount &topic_count) {
+  bool found = false;
+  topic_lock_.Lock();
+  auto itr = topic_stats_.find(topic);
+  if (itr != topic_stats_.end()) {
+    found = true;
+    topic_count = itr->second;
+  }
+  topic_lock_.Unlock();
+  return found;
+}
+
+std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
+  topic_lock_.Lock();
+  auto inflow = topic_stats_[topic].inflow_clients;
+  topic_lock_.Unlock();
+  std::vector<Monitor::ClientAddress> res;
+  host_lock_.Lock();
+  for (auto fd : inflow) {
+    res.push_back(clients_[fd]);
+  }
+  host_lock_.Unlock();
+  return res;
+}
+
+std::vector<Monitor::ClientAddress> Monitor::GetSubscriber(const sds topic) {
+  topic_lock_.Lock();
+  auto outflow = topic_stats_[topic].outflow_clients;
+  topic_lock_.Unlock();
+  std::vector<Monitor::ClientAddress> res;
+  host_lock_.Lock();
+  for (auto fd : outflow) {
+    res.push_back(clients_[fd]);
+  }
+  host_lock_.Unlock();
+  return res;
 }
