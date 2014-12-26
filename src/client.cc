@@ -584,7 +584,7 @@ void Client::ProcessTopicInfo() {
     LogDebug("processtopicinfo: %s", argv_[1]);
     Monitor::TopicCount topic_count;
 
-    if (kids->monitor_->GetTopicCount(argv_[1], topic_count)) {
+    if (kids->monitor_->GetTopicCount(argv_[1], &topic_count)) {
       Buffer reply;
       reply.append_printf("{\"topic\":");
       reply.append_printf("\"%s\",", argv_[1]);

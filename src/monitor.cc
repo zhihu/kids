@@ -19,6 +19,48 @@ static int Cron(struct aeEventLoop *el, long long id, void *clientData) {
   return (Monitor::kCronPeriod - time(nullptr) % Monitor::kCronPeriod) * 1000;
 }
 
+void Monitor::TopicCount::Merge(const TopicCount &count) {
+  inflow_count += count.inflow_count;
+  outflow_count += count.outflow_count;
+  inflow_clients.insert(count.inflow_clients.begin(), count.inflow_clients.end());
+  outflow_clients.insert(count.outflow_clients.begin(), count.outflow_clients.end());
+}
+
+void Monitor::Stats::IncreaseTopicInflowCount(const sds topic, int fd) {
+  sds local_topic = LocalizeTopic(topic);
+  splock.Lock();
+  topic_stats[local_topic].inflow_count += 1;
+  topic_stats[local_topic].inflow_clients.insert(fd);
+  splock.Unlock();
+}
+
+void Monitor::Stats::IncreaseTopicOutflowCount(const sds topic, int fd) {
+  sds local_topic = LocalizeTopic(topic);
+  splock.Lock();
+  topic_stats[local_topic].outflow_count += 1;
+  topic_stats[local_topic].outflow_clients.insert(fd);
+  splock.Unlock();
+}
+
+Monitor::Stats::~Stats() {
+  for (auto &topic : topic_table) {
+    sdsfree(topic);
+  }
+}
+
+sds Monitor::Stats::LocalizeTopic(const sds topic) {
+  sds local_topic;
+  auto itr = topic_table.find(topic);
+  if (itr == topic_table.end()) {
+    local_topic = sdsdup(topic);
+    topic_table.insert(local_topic);
+  } else {
+    local_topic = *itr;
+  }
+  return local_topic;
+}
+
+
 Monitor *Monitor::Create(const std::vector<Worker*> &workers_) {
   Monitor *monitor = new Monitor();
   monitor->workers_ = workers_;
@@ -83,7 +125,7 @@ void Monitor::CollectStats() {
     topic.second.outflow_count /= kCronPeriod;
   }
 
-  /* rvalue reference in c++ 11 */
+  /* rvalue reference in C++ 11 */
   topic_stats_.swap(topic_stats);
 }
 
@@ -122,13 +164,13 @@ void Monitor::UnRegisterClient(int fd) {
   host_lock_.Unlock();
 }
 
-bool Monitor::GetTopicCount(const sds topic, Monitor::TopicCount &topic_count) {
+bool Monitor::GetTopicCount(const sds topic, Monitor::TopicCount *topic_count) {
   bool found = false;
   topic_lock_.Lock();
   auto itr = topic_stats_.find(topic);
   if (itr != topic_stats_.end()) {
     found = true;
-    topic_count = itr->second;
+    *topic_count = itr->second;
   }
   topic_lock_.Unlock();
   return found;
