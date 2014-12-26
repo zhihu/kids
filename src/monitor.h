@@ -12,7 +12,7 @@
 class Worker;
 class Client;
 
-typedef char * sds;
+typedef char *sds;
 struct aeEventLoop;
 
 class Monitor {
@@ -26,12 +26,7 @@ class Monitor {
     std::unordered_set<int> inflow_clients;
     std::unordered_set<int> outflow_clients;
 
-    void Merge(const TopicCount &count) {
-      inflow_count += count.inflow_count;
-      outflow_count += count.outflow_count;
-      inflow_clients.insert(count.inflow_clients.begin(), count.inflow_clients.end());
-      outflow_clients.insert(count.outflow_clients.begin(), count.outflow_clients.end());
-    }
+    void Merge(const TopicCount &count);
   };
 
   struct ClientAddress {
@@ -47,40 +42,10 @@ class Monitor {
     TopicSet   topic_table;
     Spinlock   splock;
 
-    void IncreaseTopicInflowCount(const sds topic, int fd) {
-      sds local_topic = LocalizeTopic(topic);
-      splock.Lock();
-      topic_stats[local_topic].inflow_count += 1;
-      topic_stats[local_topic].inflow_clients.insert(fd);
-      splock.Unlock();
-    }
-
-    void IncreaseTopicOutflowCount(const sds topic, int fd) {
-      sds local_topic = LocalizeTopic(topic);
-      splock.Lock();
-      topic_stats[local_topic].outflow_count += 1;
-      topic_stats[local_topic].outflow_clients.insert(fd);
-      splock.Unlock();
-    }
-
-    ~Stats() {
-      for (auto &topic : topic_table) {
-        sdsfree(topic);
-      }
-    }
-
-   private:
-    sds LocalizeTopic(const sds topic) {
-      sds local_topic;
-      auto itr = topic_table.find(topic);
-      if (itr == topic_table.end()) {
-        local_topic = sdsdup(topic);
-        topic_table.insert(local_topic);
-      } else {
-        local_topic = *itr;
-      }
-      return local_topic;
-    }
+    void IncreaseTopicInflowCount(const sds topic, int fd);
+    void IncreaseTopicOutflowCount(const sds topic, int fd);
+    sds LocalizeTopic(const sds topic);
+    ~Stats();
   };
 
   static Monitor *Create(const std::vector<Worker*> &workers_);
@@ -93,7 +58,7 @@ class Monitor {
   TopicSet GetActiveTopics();
   TopicSet GetAllTopics();
   TopicStats GetTopicStats();
-  bool GetTopicCount(const sds topic, TopicCount &topic_count);
+  bool GetTopicCount(const sds topic, TopicCount *topic_count);
   std::vector<ClientAddress> GetPublisher(const sds topic);
   std::vector<ClientAddress> GetSubscriber(const sds topic);
 
