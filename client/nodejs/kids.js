@@ -247,7 +247,7 @@ Client.prototype.psubscribe = function(topic, callback) {
  * @param {Function} callback
  */
 Client.prototype.unsubscribe = function(topic, callback) {
-  return this.conn.unsubscribe([UNSUBSCRIBE, topic], callback);
+  return this.conn.send([UNSUBSCRIBE, topic], callback);
 };
 
 
@@ -259,7 +259,7 @@ Client.prototype.unsubscribe = function(topic, callback) {
  * @param {Function} callback
  */
 Client.prototype.punsubscribe = function(topic, callback) {
-  return this.conn.unsubscribe([PUNSUBSCRIBE, topic], callback);
+  return this.conn.send([PUNSUBSCRIBE, topic], callback);
 };
 
 
