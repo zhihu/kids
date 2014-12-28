@@ -77,6 +77,16 @@ void Client::ProcessUnSubscribe(bool notify) {
   }
 }
 
+void Client::ProcessPUnSubscribe(bool notify) {
+  if (argv_.size() > 1) {
+    for (int i = 1; i < argv_.size(); i++) {
+      UnsubscribePattern(argv_[i], notify);
+    }
+  } else {
+    UnsubscribeAllPatterns(notify);
+  }
+}
+
 void Client::UnsubscribeTopic(const sds& topic, bool notify) {
   LogDebug("Unsubscribe %s", topic);
   // Notify the client
