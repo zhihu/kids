@@ -54,6 +54,7 @@ class Client {
   void ProcessSubscribe();
   void ProcessPSubscribe();
   void ProcessUnSubscribe(bool notify);
+  void ProcessPUnSubscribe(bool notify);
   void ProcessShutdown();
   void ProcessOther();
   void ProcessProtocolError(const int pos);

@@ -434,6 +434,8 @@ bool Client::ProcessCommand() {
     ProcessPSubscribe();
   } else if (!strcasecmp(command, "unsubscribe")) {
     ProcessUnSubscribe(true);
+  } else if (!strcasecmp(command, "punsubscribe")) {
+    ProcessPUnSubscribe(true);
   } else if (!strcasecmp(command, "shutdown")) {
     ProcessShutdown();
   } else if (!strcasecmp(command, "select")) {
