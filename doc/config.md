@@ -22,6 +22,11 @@ Case sensitive switch for `PSUBSCRIBE` command.
 
 `PSUBSCRIBE` command will be case insensitive when ignore_case is 'on'.
 
+## `max_clients`
+
+Max number of connections for each host.
+
+When the number of connections of host exceed the value, the new connection will be forced closed.
 
 ## `log`
 

@@ -116,6 +116,12 @@ Client::~Client() {
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_READABLE);
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_WRITABLE);
 
+  if (kids->config_.max_clients != 0) {
+    char ip[32];
+    anetPeerToString(fd_, ip, sizeof(ip), nullptr);
+    kids->RemoveClient(std::string(ip));
+  }
+
   close(fd_);
 
   UnsubscribeAllTopics(false);

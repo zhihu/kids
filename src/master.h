@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
+#include <mutex>
 
 #include "conf.h"
 #include "common.h"
@@ -24,6 +26,7 @@ class Master {
     std::string listen_host;
     int listen_port;
     bool ignore_case;
+    int max_clients;
     LimitConfig nlimit[3];
     uint64_t queue_limit;
   } Config;
@@ -35,6 +38,9 @@ class Master {
   bool PutMessage(const sds &topic, const sds &content, const int worker_id);
 
   void NotifyNewMessage(const int worker_id);
+
+  bool ShouldAccept(const std::string &host);
+  void RemoveClient(const std::string &host);
 
   void Start();
   void Stop();
@@ -48,6 +54,9 @@ class Master {
 
   int last_thread_;
   std::vector<Worker*> workers_;
+
+  std::unordered_map<std::string, uint16_t> connected_clients_;
+  std::mutex clients_mtx_;
 
   Storer *storer_;
   MQ *message_queue_;

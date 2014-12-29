@@ -7,6 +7,12 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
   char error[1024];
 
   cfd = anetTcpAccept(error, fd, ip, sizeof(ip), &port);
+
+  if (!kids->ShouldAccept(std::string(ip))) {
+    close(cfd);
+    return;
+  }
+
   if (cfd == AE_ERR) {
     LogError("Accept client connection failed: %s", error);
     return;
@@ -42,6 +48,7 @@ Master::Master(const KidsConfig *conf)
       conf->listen_host,
       atoi(conf->listen_port.c_str()),
       conf->ignore_case == "on",
+      atoi(conf->max_clients.c_str()),
       {conf->nlimit[0], conf->nlimit[1], conf->nlimit[2]},
       1000000}
 {
@@ -130,6 +137,26 @@ Master::~Master() {
 
   aeDeleteEventLoop(eventl_);
   MQClose(message_queue_);
+}
+
+bool Master::ShouldAccept(const std::string &host) {
+  if (config_.max_clients <= 0)
+    return true;
+
+  std::lock_guard<std::mutex> _(clients_mtx_);
+  if (connected_clients_[host] < config_.max_clients) {
+    connected_clients_[host] += 1;
+    return true;
+  }
+  return false;
+}
+
+void Master::RemoveClient(const std::string &host) {
+  if (config_.max_clients <= 0)
+    return;
+
+  std::lock_guard<std::mutex> _(clients_mtx_);
+  connected_clients_[host] -= 1;
 }
 
 void Master::AssignNewConnection(const int fd) {
