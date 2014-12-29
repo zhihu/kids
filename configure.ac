@@ -85,7 +85,8 @@ AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  test/Makefile])
 
-AC_CONFIG_SUBDIRS([deps/ae])
+AC_CONFIG_SUBDIRS([deps/ae
+                   deps/civetweb])
 AC_OUTPUT
 AC_MSG_NOTICE([Configuration Summary:
  _  _______ _____   _____

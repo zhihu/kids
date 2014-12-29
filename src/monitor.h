@@ -5,7 +5,9 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <memory>
 
+#include "civetweb/libcivetweb.h"
 #include "common.h"
 #include "spinlock.h"
 
@@ -15,10 +17,21 @@ class Client;
 typedef char *sds;
 struct aeEventLoop;
 
+
+class TopicsHandler: public CivetHandler {
+ public:
+  bool handleGet(CivetServer *server, struct mg_connection *conn);
+};
+
+class TopicHandler: public CivetHandler {
+ public:
+  bool handleGet(CivetServer *server, struct mg_connection *conn);
+};
+
 class Monitor {
  public:
-  static const uint32_t kCronPeriod   = 5;  // 5 second
-  static const uint32_t kCronPeriodms = kCronPeriod * 1000;  // 5000 ms
+  static constexpr uint32_t kCronPeriod   = 5;  // 5 second
+  static constexpr uint32_t kCronPeriodms = kCronPeriod * 1000;  // 5000 ms
 
   struct TopicCount {
     uint32_t inflow_count;
@@ -78,6 +91,8 @@ class Monitor {
   Spinlock topic_lock_;
   Spinlock host_lock_;
   pthread_t monitor_thread_;
+
+  std::shared_ptr<CivetServer> http_server_;
 
   std::unordered_map<int, ClientAddress> clients_;
 

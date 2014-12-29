@@ -1,10 +1,8 @@
 #include "monitor.h"
 #include "kids.h"
-#include <cassert>
-#include <cctype>
-#include <numeric>
 #include <algorithm>
 #include <string>
+#include <cinttypes>
 
 static void *MonitorMain(void *args) {
   aeMain(static_cast<aeEventLoop *>(args));
@@ -14,8 +12,8 @@ static void *MonitorMain(void *args) {
 static int Cron(struct aeEventLoop *el, long long id, void *clientData) {
   NOTUSED(el);
   NOTUSED(id);
-  Monitor *p = static_cast<Monitor *>(clientData);
-  p->Cron();
+  Monitor *monitor = static_cast<Monitor *>(clientData);
+  monitor->Cron();
   return (Monitor::kCronPeriod - time(nullptr) % Monitor::kCronPeriod) * 1000;
 }
 
@@ -60,7 +58,6 @@ sds Monitor::Stats::LocalizeTopic(const sds topic) {
   return local_topic;
 }
 
-
 Monitor *Monitor::Create(const std::vector<Worker*> &workers_) {
   Monitor *monitor = new Monitor();
   monitor->workers_ = workers_;
@@ -83,6 +80,11 @@ Monitor::~Monitor() {
 
 void Monitor::Start() {
   pthread_create(&monitor_thread_, nullptr, MonitorMain, eventl_);
+  const char *options[] = { "listening_ports", "8327", nullptr };
+  http_server_ = std::make_shared<CivetServer>(options);
+  http_server_->addHandler("/topic$", new TopicsHandler);
+  http_server_->addHandler("/topic/**$", new TopicHandler);
+  LogInfo("HTTP server started on 8327");
 }
 
 void Monitor::Stop() {
@@ -183,7 +185,9 @@ std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
   std::vector<Monitor::ClientAddress> res;
   host_lock_.Lock();
   for (auto fd : inflow) {
-    res.push_back(clients_[fd]);
+    auto itr = clients_.find(fd);
+    if (itr != clients_.end())
+      res.push_back(itr->second);
   }
   host_lock_.Unlock();
   return res;
@@ -196,8 +200,73 @@ std::vector<Monitor::ClientAddress> Monitor::GetSubscriber(const sds topic) {
   std::vector<Monitor::ClientAddress> res;
   host_lock_.Lock();
   for (auto fd : outflow) {
-    res.push_back(clients_[fd]);
+    auto itr = clients_.find(fd);
+    if (itr != clients_.end())
+      res.push_back(itr->second);
   }
   host_lock_.Unlock();
   return res;
+}
+
+/* HTTP server */
+
+bool TopicsHandler::handleGet(CivetServer *server, struct mg_connection *conn) {
+  std::string s = "";
+  mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+  auto topic_stats = kids->monitor_->GetTopicStats();
+  mg_printf(conn, "{\"topics\":[");
+  for (auto itr = topic_stats.begin(); itr != topic_stats.end(); itr++) {
+    mg_printf(conn, "{");
+    mg_printf(conn, "\"topic\":\"%s\",", itr->first);
+    mg_printf(conn, "\"msg_in_ps\":%" PRIu32 ",", itr->second.inflow_count);
+    mg_printf(conn, "\"msg_out_ps\":%" PRIu32, itr->second.outflow_count);
+    mg_printf(conn, "}");
+    if (std::next(itr) != topic_stats.end())
+      mg_printf(conn, ",");
+  }
+  mg_printf(conn, "]}");
+  return true;
+}
+
+bool TopicHandler::handleGet(CivetServer *server, struct mg_connection *conn) {
+  bool showclient = false;
+  std::string param;
+  mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+  if (CivetServer::getParam(conn, "showclient", param)) {
+    showclient = (param == "true");
+  }
+  Monitor::TopicCount topic_count;
+  auto *req_info = mg_get_request_info(conn);
+  sds topic = sdsnew(req_info->uri + sizeof("/topic"));
+
+  if (kids->monitor_->GetTopicCount(topic, &topic_count)) {
+    mg_printf(conn, "{\"topic\":");
+    mg_printf(conn, "\"%s\",", topic);
+    mg_printf(conn, "\"msg_in_ps\":%" PRIu32 ",", topic_count.inflow_count);
+    mg_printf(conn, "\"msg_out_ps\":%" PRIu32, topic_count.outflow_count);
+    if (showclient) {
+      auto inflow_clients = kids->monitor_->GetPublisher(topic);
+      auto outflow_clients = kids->monitor_->GetSubscriber(topic);
+      mg_printf(conn, ",");
+      mg_printf(conn, "\"inflow_clients\":[");
+      for (auto itr = inflow_clients.begin(); itr != inflow_clients.end(); itr++) {
+        mg_printf(conn, "{\"host\":\"%s\", \"port\":\"%d\"}", itr->host.c_str(), itr->port);
+        if (std::next(itr) != inflow_clients.end())
+          mg_printf(conn, ",");
+      }
+      mg_printf(conn, "],");
+      mg_printf(conn, "\"outflow_clients\":[");
+      for (auto itr = outflow_clients.begin(); itr != outflow_clients.end(); itr++) {
+        mg_printf(conn, "{\"host\":\"%s\", \"port\":\"%d\"}", itr->host.c_str(), itr->port);
+        if (std::next(itr) != outflow_clients.end())
+          mg_printf(conn, ",");
+      }
+      mg_printf(conn, "]");
+    }
+    mg_printf(conn, "}");
+  } else {
+    mg_printf(conn, "\"error\":\"topic:%s is not active now", topic);
+  }
+  sdsfree(topic);
+  return true;
 }
