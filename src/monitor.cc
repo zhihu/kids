@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <cinttypes>
+#include <mutex>
 
 static void *MonitorMain(void *args) {
   aeMain(static_cast<aeEventLoop *>(args));
@@ -26,18 +27,16 @@ void Monitor::TopicCount::Merge(const TopicCount &count) {
 
 void Monitor::Stats::IncreaseTopicInflowCount(const sds topic, int fd) {
   sds local_topic = LocalizeTopic(topic);
-  splock.Lock();
+  std::lock_guard<Spinlock> _(splock);
   topic_stats[local_topic].inflow_count += 1;
   topic_stats[local_topic].inflow_clients.insert(fd);
-  splock.Unlock();
 }
 
 void Monitor::Stats::IncreaseTopicOutflowCount(const sds topic, int fd) {
   sds local_topic = LocalizeTopic(topic);
-  splock.Lock();
+  std::lock_guard<Spinlock> _(splock);
   topic_stats[local_topic].outflow_count += 1;
   topic_stats[local_topic].outflow_clients.insert(fd);
-  splock.Unlock();
 }
 
 Monitor::Stats::~Stats() {
@@ -93,9 +92,8 @@ void Monitor::Stop() {
 }
 
 void Monitor::Cron() {
-  topic_lock_.Lock();
+  std::lock_guard<Spinlock> _(topic_lock_);
   CollectStats();
-  topic_lock_.Unlock();
 }
 
 void Monitor::CollectStats() {
@@ -104,9 +102,9 @@ void Monitor::CollectStats() {
   for (auto worker : workers_) {
     decltype(worker->stats.topic_stats) worker_stats;
 
-    worker->stats.splock.Lock();
+    worker->stats.splock.lock();
     worker_stats.swap(worker->stats.topic_stats);
-    worker->stats.splock.Unlock();
+    worker->stats.splock.unlock();
 
     for (auto &topic : worker_stats) {
       auto itr = topic_table_.find(topic.first);
@@ -132,79 +130,71 @@ void Monitor::CollectStats() {
 }
 
 Monitor::TopicSet Monitor::GetActiveTopics() {
-  topic_lock_.Lock();
   TopicSet active_topic;
+  std::lock_guard<Spinlock> _(topic_lock_);
   for (auto &topic : topic_stats_)
     active_topic.insert(topic.first);
-  topic_lock_.Unlock();
   return active_topic;
 }
 
 Monitor::TopicSet Monitor::GetAllTopics() {
-  topic_lock_.Lock();
-  auto all_topic = topic_table_;
-  topic_lock_.Unlock();
-  return all_topic;
+  std::lock_guard<Spinlock> _(topic_lock_);
+  return topic_table_;
 }
 
 Monitor::TopicStats Monitor::GetTopicStats() {
-  topic_lock_.Lock();
-  auto topic_stats = topic_stats_;
-  topic_lock_.Unlock();
-  return topic_stats;
+  std::lock_guard<Spinlock> _(topic_lock_);
+  return topic_stats_;
 }
 
 void Monitor::RegisterClient(int fd, const char *host, int port) {
-  host_lock_.Lock();
+  std::lock_guard<Spinlock> _(host_lock_);
   clients_[fd] = { std::string(host), port };
-  host_lock_.Unlock();
 }
 
 void Monitor::UnRegisterClient(int fd) {
-  host_lock_.Lock();
+  std::lock_guard<Spinlock> _(host_lock_);
   clients_.erase(fd);
-  host_lock_.Unlock();
 }
 
 bool Monitor::GetTopicCount(const sds topic, Monitor::TopicCount *topic_count) {
   bool found = false;
-  topic_lock_.Lock();
+  std::lock_guard<Spinlock> _(topic_lock_);
   auto itr = topic_stats_.find(topic);
   if (itr != topic_stats_.end()) {
     found = true;
     *topic_count = itr->second;
   }
-  topic_lock_.Unlock();
   return found;
 }
 
 std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
-  topic_lock_.Lock();
+  topic_lock_.lock();
   auto inflow = topic_stats_[topic].inflow_clients;
-  topic_lock_.Unlock();
+  topic_lock_.unlock();
   std::vector<Monitor::ClientAddress> res;
-  host_lock_.Lock();
+  host_lock_.lock();
   for (auto fd : inflow) {
     auto itr = clients_.find(fd);
     if (itr != clients_.end())
       res.push_back(itr->second);
   }
-  host_lock_.Unlock();
+  host_lock_.unlock();
   return res;
 }
 
 std::vector<Monitor::ClientAddress> Monitor::GetSubscriber(const sds topic) {
-  topic_lock_.Lock();
+  topic_lock_.lock();
   auto outflow = topic_stats_[topic].outflow_clients;
-  topic_lock_.Unlock();
+  topic_lock_.unlock();
   std::vector<Monitor::ClientAddress> res;
-  host_lock_.Lock();
+  host_lock_.lock();
   for (auto fd : outflow) {
     auto itr = clients_.find(fd);
     if (itr != clients_.end())
       res.push_back(itr->second);
   }
-  host_lock_.Unlock();
+  host_lock_.unlock();
   return res;
 }
 
