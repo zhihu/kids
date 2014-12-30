@@ -4,10 +4,7 @@
 #include <pthread.h>
 #include <string>
 
-typedef char *sds;
-extern "C" {
-  void sdsfree(sds s);
-}
+#include "sds.h"
 
 /* make sure topic and content is only owned by this message
  * namely, do not allocate message passing topic or content owned by other messages
@@ -41,6 +38,7 @@ struct MessageQueue {
   MQItem *head;
   MQItem *tail;
   uint64_t size;
+  uint64_t memory_usage;
   pthread_rwlock_t lock;
 };
 
@@ -55,6 +53,7 @@ void MQClose(MQ *queue);
 void MQPush(MQ *queue, const sds topic, const sds content);
 
 uint64_t MQSize(MQ* queue);
+uint64_t MQMemoryUsage(MQ *queue);
 
 MQCursor *MQCreateCursor(MQ *queue);
 void MQFreeCursor(MQCursor *cursor);

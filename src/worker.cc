@@ -173,6 +173,7 @@ void Worker::PublishMessage(const int fd) {
   if (clients != clients_by_topic_.end()) {
     for (auto it : clients->second) {
       stat_.msg_out++;
+      stat_.msg_out_traffic += (sdslen(topic) + sdslen(content));
       it->ReceiveMessage(topic, content);
     }
   }
@@ -182,6 +183,7 @@ void Worker::PublishMessage(const int fd) {
     if (stringmatchlen(it->pattern, sdslen(it->pattern),
                        topic, sdslen(topic), kids->config_.ignore_case)) {
       stat_.msg_out++;
+      stat_.msg_out_traffic += (sdslen(topic) + sdslen(content));
       it->client->ReceivePatternMessage(topic, content, it->pattern);
     }
   }

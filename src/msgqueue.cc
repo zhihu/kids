@@ -5,6 +5,7 @@ MQ* MQOpen() {
   MQ *queue = new MQ;
   queue->head = queue->tail = new MQItem(NULL, NULL, NULL);
   queue->size = 0;
+  queue->memory_usage = 0;
   pthread_rwlock_init(&queue->lock, NULL);
   return queue;
 }
@@ -28,6 +29,7 @@ void MQPush(MQ *queue, const sds topic, const sds content) {
   queue->tail->next = msg;
   queue->tail = msg;
   queue->size++;
+  queue->memory_usage += (sdslen(topic) + sdslen(content));
   pthread_rwlock_unlock(&queue->lock);
 }
 
@@ -37,6 +39,14 @@ uint64_t MQSize(MQ* queue) {
   size = queue->size;
   pthread_rwlock_unlock(&queue->lock);
   return size;
+}
+
+uint64_t MQMemoryUsage(MQ *queue) {
+  uint64_t mem_useage;
+  pthread_rwlock_rdlock(&queue->lock);
+  mem_useage = queue->memory_usage;
+  pthread_rwlock_unlock(&queue->lock);
+  return mem_useage;
 }
 
 MQCursor *MQCreateCursor(MQ *queue) {
@@ -71,12 +81,15 @@ uint64_t MQFreeOldMessages(MQ *queue, MQItem **last_positions, int len) {
   MQItem *p = queue->head;
   MQItem *next = NULL;
 
+  uint64_t memory_freed = 0;
   while (true) {
     bool done = false;
     for (int i = 0; i < len; ++i) {
       if (p == last_positions[i]) done = true;
     }
     if (done) break;
+    if (p->value->topic != nullptr && p->value->content != nullptr)
+      memory_freed += (sdslen(p->value->topic) + sdslen(p->value->content));
 
     next = p->next;
     delete p;
@@ -88,6 +101,7 @@ uint64_t MQFreeOldMessages(MQ *queue, MQItem **last_positions, int len) {
 
   uint64_t size = 0;
   pthread_rwlock_wrlock(&queue->lock);
+  queue->memory_usage -= memory_freed;
   queue->size -= count;
   size = queue->size;
   pthread_rwlock_unlock(&queue->lock);
