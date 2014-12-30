@@ -116,7 +116,8 @@ Client::~Client() {
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_READABLE);
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_WRITABLE);
 
-  kids->monitor_->UnRegisterClient(fd_);
+  if (kids->config_.monitor)
+    kids->monitor_->UnRegisterClient(fd_);
 
   close(fd_);
 
@@ -472,7 +473,9 @@ void Client::ProcessLog() {
   } else {
     LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
     worker_->stat_.msg_in++;
-    worker_->stats.IncreaseTopicInflowCount(argv_[1], fd_);
+
+    if (kids->config_.monitor)
+      worker_->stats.IncreaseTopicInflowCount(argv_[1], fd_);
 
     if (kids->PutMessage(argv_[1], argv_[2], worker_->worker_id_)) {
       Reply(REP_CONE, REP_CONE_SIZE);
