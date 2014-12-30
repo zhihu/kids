@@ -2,6 +2,6 @@
 #define LIBCIVETWEB_H
 
 #include "civetweb.h"
-#include "CivetServer.h"
+#include "civetserver.h"
 
 #endif /* LIBCIVETWEB_H */

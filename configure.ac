@@ -20,6 +20,9 @@ AC_CANONICAL_HOST
 
 # Checks for libraries.
 AC_SEARCH_LIBS([pthread_create], [pthread])
+AC_SEARCH_LIBS([dlopen], [dl])
+AC_SEARCH_LIBS([dlsym], [dl])
+AC_SEARCH_LIBS([dlclose], [dl])
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h sys/timeb.h termios.h unistd.h wchar.h wctype.h pthread.h])

@@ -12,6 +12,12 @@ AE_SOURCE = @top_srcdir@/deps/ae/ae.h \
 						@top_srcdir@/deps/ae/fmacros.h \
 						@top_srcdir@/deps/ae/libae.h
 
+CIVETWEB_SOURCE = @top_srcdir@/deps/civetweb/civetweb.h \
+						@top_srcdir@/deps/civetweb/civetweb.c \
+						@top_srcdir@/deps/civetweb/civetserver.h \
+						@top_srcdir@/deps/civetweb/civetserver.cpp \
+						@top_srcdir@/deps/civetweb/libcivetweb.h
+
 KIDS_SOURCE = @top_srcdir@/src/store/store.cc \
 							@top_srcdir@/src/store/bufferstore.cc\
 							@top_srcdir@/src/store/filestore.cc\
@@ -49,12 +55,13 @@ check_PROGRAMS = runtest
 runtest_SOURCES = $(TEST_SOURCE)
 runtest_SOURCES += $(KIDS_SOURCE)
 runtest_SOURCES += $(AE_SOURCE)
+runtest_SOURCES += $(CIVETWEB_SOURCE)
 runtest_SOURCES += $(GTEST_SOURCE)
 
 CXXFLAGS := $(filter-out -Werror,$(CXXFLAGS))
 runtest_CXXFLAGS = -std=c++11 -I$(KIDS_DIR) -I$(DEPS_DIR) -DTEST_DIR=\"$(top_srcdir)/test/data\"
 
-LIBS = -lpthread
+LIBS = -lpthread -ldl
 
 TESTS = $(check_PROGRAMS)
 

@@ -4,7 +4,7 @@
  * License http://opensource.org/licenses/mit-license.php MIT License
  */
 
-#include "CivetServer.h"
+#include "civetserver.h"
 
 #include <stdlib.h>
 #include <string.h>
