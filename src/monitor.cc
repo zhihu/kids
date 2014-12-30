@@ -79,7 +79,7 @@ Monitor::~Monitor() {
 
 void Monitor::Start() {
   pthread_create(&monitor_thread_, nullptr, MonitorMain, eventl_);
-  const char *options[] = { "listening_ports", "8327", nullptr };
+  const char *options[] = { "listening_ports", "8327", "num_threads", "1",  nullptr };
   http_server_ = std::make_shared<CivetServer>(options);
   http_server_->addHandler("/topic$", new TopicsHandler);
   http_server_->addHandler("/topic/**$", new TopicHandler);
