@@ -255,7 +255,7 @@ bool TopicHandler::handleGet(CivetServer *server, struct mg_connection *conn) {
     }
     mg_printf(conn, "}");
   } else {
-    mg_printf(conn, "\"error\":\"topic:%s is not active now", topic);
+    mg_printf(conn, "{\"error\":\"%s is not active now\"}", topic);
   }
   sdsfree(topic);
   return true;
