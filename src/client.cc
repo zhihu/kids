@@ -441,10 +441,10 @@ bool Client::ProcessCommand() {
     ProcessTopics();
   } else if (!strcasecmp(command, "topicinfo")) {
     ProcessTopicInfo();
-  } else if (!strcasecmp(command, "lsactivetopic")) {
-    ProcessLsActiveTopic();
-  } else if (!strcasecmp(command, "lsalltopic")) {
-    ProcessLsAllTopic();
+  } else if (!strcasecmp(command, "lsactivetopics")) {
+    ProcessLsActiveTopics();
+  } else if (!strcasecmp(command, "lsalltopics")) {
+    ProcessLsAllTopics();
   } else if (!strcasecmp(command, "clientsof")) {
     ProcessClientsOf();
   } else if (!strcasecmp(command, "shutdown")) {
@@ -524,26 +524,26 @@ void Client::ProcessPing() {
   Reply(REP_PONG, REP_PONG_SIZE);
 }
 
-void Client::ProcessLsActiveTopic() {
-  Monitor::TopicSet active_topic = kids->monitor_->GetActiveTopics();
+void Client::ProcessLsActiveTopics() {
+  Monitor::TopicSet active_topics = kids->monitor_->GetActiveTopics();
   Buffer reply;
   reply.append_printf("{\"active_topics\":[");
-  for (auto itr = active_topic.begin(); itr != active_topic.end(); itr++) {
+  for (auto itr = active_topics.begin(); itr != active_topics.end(); itr++) {
     reply.append_printf("\"%s\"", *itr);
-    if (std::next(itr) != active_topic.end())
+    if (std::next(itr) != active_topics.end())
       reply.append_printf(",");
   }
   reply.append_printf("]}");
   ReplyBulk(reply.data(), reply.size());
 }
 
-void Client::ProcessLsAllTopic() {
-  Monitor::TopicSet all_topic = kids->monitor_->GetAllTopics();
+void Client::ProcessLsAllTopics() {
+  Monitor::TopicSet all_topics = kids->monitor_->GetAllTopics();
   Buffer reply;
   reply.append_printf("{\"all_topics\":[");
-  for (auto itr = all_topic.begin(); itr != all_topic.end(); itr++) {
+  for (auto itr = all_topics.begin(); itr != all_topics.end(); itr++) {
     reply.append_printf("\"%s\"", *itr);
-    if (std::next(itr) != all_topic.end())
+    if (std::next(itr) != all_topics.end())
       reply.append_printf(",");
   }
   reply.append_printf("]}");

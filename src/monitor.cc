@@ -81,8 +81,8 @@ void Monitor::Start() {
   pthread_create(&monitor_thread_, nullptr, MonitorMain, eventl_);
   const char *options[] = { "listening_ports", "8327", "num_threads", "1",  nullptr };
   http_server_ = std::make_shared<CivetServer>(options);
-  http_server_->addHandler("/topic$", new TopicsHandler);
-  http_server_->addHandler("/topic/**$", new TopicHandler);
+  http_server_->addHandler("/api/v1/topic$", new TopicsHandler);
+  http_server_->addHandler("/api/v1/topic/**$", new TopicHandler);
   LogInfo("HTTP server started on 8327");
 }
 
@@ -240,7 +240,7 @@ bool TopicHandler::handleGet(CivetServer *server, struct mg_connection *conn) {
   }
   Monitor::TopicCount topic_count;
   auto *req_info = mg_get_request_info(conn);
-  sds topic = sdsnew(req_info->uri + sizeof("/topic"));
+  sds topic = sdsnew(req_info->uri + sizeof("/api/v1/topic"));
 
   if (kids->monitor_->GetTopicCount(topic, &topic_count)) {
     mg_printf(conn, "{\"topic\":");
