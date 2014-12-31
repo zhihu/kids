@@ -169,10 +169,17 @@ bool Monitor::GetTopicCount(const sds topic, Monitor::TopicCount *topic_count) {
 }
 
 std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
-  topic_lock_.lock();
-  auto inflow = topic_stats_[topic].inflow_clients;
-  topic_lock_.unlock();
   std::vector<Monitor::ClientAddress> res;
+  topic_lock_.lock();
+  auto itr = topic_stats_.find(topic);
+  if (itr == topic_stats_.end()) {
+    topic_lock_.unlock();
+    return res;
+  }
+  auto inflow = itr->second.inflow_clients;
+  topic_lock_.unlock();
+  topic_lock_.unlock();
+
   host_lock_.lock();
   for (auto fd : inflow) {
     auto itr = clients_.find(fd);
@@ -184,10 +191,16 @@ std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
 }
 
 std::vector<Monitor::ClientAddress> Monitor::GetSubscriber(const sds topic) {
-  topic_lock_.lock();
-  auto outflow = topic_stats_[topic].outflow_clients;
-  topic_lock_.unlock();
   std::vector<Monitor::ClientAddress> res;
+  topic_lock_.lock();
+  auto itr = topic_stats_.find(topic);
+  if (itr == topic_stats_.end()) {
+    topic_lock_.unlock();
+    return res;
+  }
+  auto outflow = itr->second.outflow_clients;
+  topic_lock_.unlock();
+
   host_lock_.lock();
   for (auto fd : outflow) {
     auto itr = clients_.find(fd);
