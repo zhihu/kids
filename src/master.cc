@@ -7,6 +7,12 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
   char error[1024];
 
   cfd = anetTcpAccept(error, fd, ip, sizeof(ip), &port);
+
+  if (!kids->ShouldAccept(std::string(ip))) {
+    close(cfd);
+    return;
+  }
+
   if (cfd == AE_ERR) {
     LogError("Accept client connection failed: %s", error);
     return;
@@ -42,6 +48,7 @@ Master::Master(const KidsConfig *conf)
       conf->listen_host,
       atoi(conf->listen_port.c_str()),
       conf->ignore_case == "on",
+      atoi(conf->max_clients.c_str()),
       {conf->nlimit[0], conf->nlimit[1], conf->nlimit[2]},
       1000000}
 {
@@ -132,6 +139,26 @@ Master::~Master() {
   MQClose(message_queue_);
 }
 
+bool Master::ShouldAccept(const std::string &host) {
+  if (config_.max_clients <= 0)
+    return true;
+
+  std::lock_guard<std::mutex> _(clients_mtx_);
+  if (connected_clients_[host] < config_.max_clients) {
+    connected_clients_[host] += 1;
+    return true;
+  }
+  return false;
+}
+
+void Master::RemoveClient(const std::string &host) {
+  if (config_.max_clients <= 0)
+    return;
+
+  std::lock_guard<std::mutex> _(clients_mtx_);
+  connected_clients_[host] -= 1;
+}
+
 void Master::AssignNewConnection(const int fd) {
   last_thread_ = (last_thread_ + 1) % config_.worker_threads;
   Worker *t = workers_[last_thread_];
@@ -185,10 +212,12 @@ void Master::Stop() {
 }
 
 void Master::Cron() {
-  unixtime = time(NULL);
-  static uint64_t last_in = 0;
-  static uint64_t last_out = 0;
-  static time_t last_time = 0;
+  unixtime                         = time(nullptr);
+  static uint64_t last_in          = 0;
+  static uint64_t last_out         = 0;
+  static uint64_t last_in_traffic  = 0;
+  static uint64_t last_out_traffic = 0;
+  static time_t   last_time        = 0;
 
   /* garbage collection */
   MQItem **cursor_positions = new MQItem *[config_.worker_threads + 1];
@@ -199,6 +228,7 @@ void Master::Cron() {
   cursor_positions[i++] = storer_->GetCursorPosition();
   uint64_t msg_in_queue = MQFreeOldMessages(message_queue_, cursor_positions, i);
   delete[] cursor_positions;
+  uint64_t queue_mem_size = MQMemoryUsage(message_queue_);
 
   Statistic stat;
   for (auto it : workers_) {
@@ -206,18 +236,25 @@ void Master::Cron() {
   }
   stat.Add(storer_->stat_);
   /* ensure these fields are valid */
-  stat.msg_in_queue = msg_in_queue;
-  stat.start_time = stat_.start_time;
-  stat.msg_in_ps = stat_.msg_in_ps;
-  stat.msg_out_ps = stat_.msg_out_ps;
-  stat.msg_drop = stat_.msg_drop;
+  stat.queue_mem_size     = queue_mem_size;
+  stat.msg_in_queue       = msg_in_queue;
+  stat.start_time         = stat_.start_time;
+  stat.msg_in_ps          = stat_.msg_in_ps;
+  stat.msg_out_ps         = stat_.msg_out_ps;
+  stat.msg_in_traffic_ps  = stat_.msg_in_traffic_ps;
+  stat.msg_out_traffic_ps = stat_.msg_out_traffic_ps;
+  stat.msg_drop           = stat_.msg_drop;
 
   if (unixtime - last_time >= 5) {
     stat.msg_in_ps = (stat.msg_in - last_in) / (unixtime - last_time);
     stat.msg_out_ps = (stat.msg_out - last_out) / (unixtime - last_time);
+    stat.msg_in_traffic_ps = (stat.msg_in_traffic - last_in_traffic) / (unixtime - last_time);
+    stat.msg_out_traffic_ps = (stat.msg_out_traffic - last_out_traffic) / (unixtime - last_time);
 
     last_in = stat.msg_in;
     last_out = stat.msg_out;
+    last_in_traffic = stat.msg_in_traffic;
+    last_out_traffic = stat.msg_out_traffic;
     last_time = unixtime;
   }
   stat_ = stat;

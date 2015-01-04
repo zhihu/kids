@@ -116,6 +116,12 @@ Client::~Client() {
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_READABLE);
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_WRITABLE);
 
+  if (kids->config_.max_clients != 0) {
+    char ip[32];
+    anetPeerToString(fd_, ip, sizeof(ip), nullptr);
+    kids->RemoveClient(std::string(ip));
+  }
+
   close(fd_);
 
   UnsubscribeAllTopics(false);
@@ -462,6 +468,7 @@ void Client::ProcessLog() {
   } else {
     LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
     worker_->stat_.msg_in++;
+    worker_->stat_.msg_in_traffic += (sdslen(argv_[1]) + sdslen(argv_[2]));
 
     if (kids->PutMessage(argv_[1], argv_[2], worker_->worker_id_)) {
       Reply(REP_CONE, REP_CONE_SIZE);
@@ -554,26 +561,60 @@ void Client::ProcessInfo() {
 
   if (argv_.size() == 1 || !strcasecmp(section, "message") || !strcasecmp(section, "msg")) {
     if (nsection++) buf.append_printf("\r\n");
-
+    char msg_in_traffic[64];     bytesToHuman(msg_in_traffic, statistic.msg_in_traffic);
+    char msg_in_traffic_ps[64];  bytesToHuman(msg_in_traffic_ps, statistic.msg_in_traffic_ps);
+    char msg_out_traffic[64];    bytesToHuman(msg_out_traffic, statistic.msg_out_traffic);
+    char msg_out_traffic_ps[64]; bytesToHuman(msg_out_traffic_ps, statistic.msg_out_traffic_ps);
+    char queue_mem_size[64];     bytesToHuman(queue_mem_size, statistic.queue_mem_size);
+    char msg_store_size[64];     bytesToHuman(msg_store_size, statistic.msg_store_size);
+    char msg_buffer_size[64];    bytesToHuman(msg_buffer_size, statistic.msg_buffer_size);
 
     buf.append_printf("# Messages\r\n"
                       "message_in:%llu\r\n"
+                      "message_in_traffic:%llu\r\n"
+                      "message_in_traffic_human:%s\r\n"
                       "message_in_per_second:%llu\r\n"
+                      "message_in_traffic_per_second:%llu\r\n"
+                      "message_in_traffic_per_second_human:%s\r\n"
                       "message_out:%llu\r\n"
+                      "message_out_traffic:%llu\r\n"
+                      "message_out_traffic_human:%s\r\n"
                       "message_out_per_second:%llu\r\n"
+                      "message_out_traffic_per_second:%llu\r\n"
+                      "message_out_traffic_per_second_human:%s\r\n"
                       "message_in_queue:%llu\r\n"
+                      "queue_mem_size:%llu\r\n"
+                      "queue_mem_size_human:%s\r\n"
                       "message_store:%llu\r\n"
+                      "message_store_size:%llu\r\n"
+                      "message_store_size_human:%s\r\n"
                       "message_buffer:%llu\r\n"
+                      "message_buffer_size:%llu\r\n"
+                      "message_buffer_size_human:%s\r\n"
                       "message_drop:%llu\r\n"
                       "pubsub_topics:%zu\r\n"
                       "pubsub_patterns:%zu\r\n",
                       statistic.msg_in,
+                      statistic.msg_in_traffic,
+                      msg_in_traffic,
                       statistic.msg_in_ps,
+                      statistic.msg_in_traffic_ps,
+                      msg_in_traffic_ps,
                       statistic.msg_out,
+                      statistic.msg_out_traffic,
+                      msg_out_traffic,
                       statistic.msg_out_ps,
+                      statistic.msg_out_traffic_ps,
+                      msg_out_traffic_ps,
                       statistic.msg_in_queue,
+                      statistic.queue_mem_size,
+                      queue_mem_size,
                       statistic.msg_store,
+                      statistic.msg_store_size,
+                      msg_store_size,
                       statistic.msg_buffer,
+                      statistic.msg_buffer_size,
+                      msg_buffer_size,
                       statistic.msg_drop,
                       statistic.topics,
                       statistic.patterns);

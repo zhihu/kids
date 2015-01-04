@@ -107,8 +107,10 @@ bool FileStore::DoAddMessage(const Message *msg) {
     if (buffer_type_ == kSecondary) {
       LogDebug("bufferred a msg, total: %d", stat_->msg_buffer);
       stat_->msg_buffer++;
+      stat_->msg_buffer_size += sdslen(msg->content);
     } else {
       stat_->msg_store++;
+      stat_->msg_store_size += sdslen(msg->content);
     }
   }
 

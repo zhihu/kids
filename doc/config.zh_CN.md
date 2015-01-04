@@ -21,6 +21,12 @@ Kids 运行时会生成 n 个 worker 线程，除此之外会有 1 个负责调�
 
 ignore_case 设置为 on 后，`PSUBSCRIBE` 命令将忽略大小写。
 
+## `max_clients`
+
+每个 host 的最大连接数
+
+当 host 的连接数超过该值后，新建立的连接会被强制 close 。
+
 
 ## `log`
 
