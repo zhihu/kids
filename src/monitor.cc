@@ -178,7 +178,6 @@ std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
   }
   auto inflow = itr->second.inflow_clients;
   topic_lock_.unlock();
-  topic_lock_.unlock();
 
   host_lock_.lock();
   for (auto fd : inflow) {
