@@ -2,8 +2,9 @@ FROM debian:wheezy
 
 MAINTAINER Li Yichao <liyichao.good@gmail.com>
 
+COPY ./docker/sources.list /etc/apt/sources.list
 RUN	apt-get update && \
-	apt-get install -yq --no-install-recommends \
+	apt-get install -y --no-install-recommends \
 	build-essential \
 	libtool \
 	automake
