@@ -116,7 +116,8 @@ Client::~Client() {
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_READABLE);
   aeDeleteFileEvent(worker_->eventl_, fd_, AE_WRITABLE);
 
-  kids->monitor_->UnRegisterClient(fd_);
+  if (kids->config_.monitor)
+    kids->monitor_->UnRegisterClient(fd_);
 
   close(fd_);
 
@@ -440,10 +441,10 @@ bool Client::ProcessCommand() {
     ProcessTopics();
   } else if (!strcasecmp(command, "topicinfo")) {
     ProcessTopicInfo();
-  } else if (!strcasecmp(command, "lsactivetopic")) {
-    ProcessLsActiveTopic();
-  } else if (!strcasecmp(command, "lsalltopic")) {
-    ProcessLsAllTopic();
+  } else if (!strcasecmp(command, "lsactivetopics")) {
+    ProcessLsActiveTopics();
+  } else if (!strcasecmp(command, "lsalltopics")) {
+    ProcessLsAllTopics();
   } else if (!strcasecmp(command, "clientsof")) {
     ProcessClientsOf();
   } else if (!strcasecmp(command, "shutdown")) {
@@ -472,7 +473,9 @@ void Client::ProcessLog() {
   } else {
     LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
     worker_->stat_.msg_in++;
-    worker_->stats.IncreaseTopicInflowCount(argv_[1], fd_);
+
+    if (kids->config_.monitor)
+      worker_->stats.IncreaseTopicInflowCount(argv_[1], fd_);
 
     if (kids->PutMessage(argv_[1], argv_[2], worker_->worker_id_)) {
       Reply(REP_CONE, REP_CONE_SIZE);
@@ -521,26 +524,26 @@ void Client::ProcessPing() {
   Reply(REP_PONG, REP_PONG_SIZE);
 }
 
-void Client::ProcessLsActiveTopic() {
-  Monitor::TopicSet active_topic = kids->monitor_->GetActiveTopics();
+void Client::ProcessLsActiveTopics() {
+  Monitor::TopicSet active_topics = kids->monitor_->GetActiveTopics();
   Buffer reply;
   reply.append_printf("{\"active_topics\":[");
-  for (auto itr = active_topic.begin(); itr != active_topic.end(); itr++) {
+  for (auto itr = active_topics.begin(); itr != active_topics.end(); itr++) {
     reply.append_printf("\"%s\"", *itr);
-    if (std::next(itr) != active_topic.end())
+    if (std::next(itr) != active_topics.end())
       reply.append_printf(",");
   }
   reply.append_printf("]}");
   ReplyBulk(reply.data(), reply.size());
 }
 
-void Client::ProcessLsAllTopic() {
-  Monitor::TopicSet all_topic = kids->monitor_->GetAllTopics();
+void Client::ProcessLsAllTopics() {
+  Monitor::TopicSet all_topics = kids->monitor_->GetAllTopics();
   Buffer reply;
   reply.append_printf("{\"all_topics\":[");
-  for (auto itr = all_topic.begin(); itr != all_topic.end(); itr++) {
+  for (auto itr = all_topics.begin(); itr != all_topics.end(); itr++) {
     reply.append_printf("\"%s\"", *itr);
-    if (std::next(itr) != all_topic.end())
+    if (std::next(itr) != all_topics.end())
       reply.append_printf(",");
   }
   reply.append_printf("]}");

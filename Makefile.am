@@ -1,7 +1,7 @@
-SUBDIRS = deps/ae src doc test
+SUBDIRS = deps/ae deps/civetweb src doc test
 
 all-am:
-	cd deps/ae && $(MAKE)
+	cd deps/ae && $(MAKE) && cd ../civetweb && $(MAKE)
 
 install:
 	cd src && $(MAKE) install

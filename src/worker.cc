@@ -173,7 +173,8 @@ void Worker::PublishMessage(const int fd) {
   if (clients != clients_by_topic_.end()) {
     for (auto it : clients->second) {
       stat_.msg_out++;
-      stats.IncreaseTopicOutflowCount(topic, it->GetFd());
+      if (kids->config_.monitor)
+        stats.IncreaseTopicOutflowCount(topic, it->GetFd());
       it->ReceiveMessage(topic, content);
     }
   }
@@ -183,7 +184,8 @@ void Worker::PublishMessage(const int fd) {
     if (stringmatchlen(it->pattern, sdslen(it->pattern),
                        topic, sdslen(topic), kids->config_.ignore_case)) {
       stat_.msg_out++;
-      stats.IncreaseTopicOutflowCount(topic, it->client->GetFd());
+      if (kids->config_.monitor)
+        stats.IncreaseTopicOutflowCount(topic, it->client->GetFd());
       it->client->ReceivePatternMessage(topic, content, it->pattern);
     }
   }

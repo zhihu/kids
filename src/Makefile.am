@@ -29,6 +29,6 @@ kids_CPPFLAGS = -I$(DEPS_DIR) $(AM_CPPFLAGS)
 kids_CXXFLAGS = $(AM_CXXFLAGS)
 kids_CFLAGS = $(AM_CFLAGS)
 
-kids_LDADD = $(DEPS_DIR)/ae/libae.a
+kids_LDADD = $(DEPS_DIR)/ae/libae.a $(DEPS_DIR)/civetweb/libcivetweb.a
 
 kids_LIBS = pthread
