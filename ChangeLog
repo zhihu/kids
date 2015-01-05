@@ -1,27 +1,18 @@
-v 1.0.0
+v 1.1.0 
   - Add docker/sources.list.
-  - Change debian mirror to avoid http.debian.net bug.
   - Add support for `max_clients` in config file.
   - Add support for redis command `PUNSUBSCRIBE` to unsubscribe patterns.
   - Add Nodejs Client for kids.
   - Add topic wildcards in PriorityStore example.
   - Output deb in project directory.
   - All reference to version now comes from version.m4.
-  - Update Chinese README.
-  - Update README.zh_CN.
   - Change LICENSE to BSD-3-Clause in make_deb.sh.
   - Add contributors to LICENSE.
-  - Update README.md.
-  - Globs seem to be bashism.
-  - Add two Dockerfiles.
-  - Fix typo in README.
   - Add packaging for deb.
-  - Revert "add the missed ./autogen.sh in the Installation section of README.
-  - Add the missed ./autogen.sh in the Installation section of README.md.
   - Convert README to Unix format and minor edit.
   - Update description for `ignore_case` in doc.
   - Add Travis CI.
-  - Fix typo.
   - Ask users to download releases instead.
-  - Update README.
+  
+v 1.0.0
   - First public version.
