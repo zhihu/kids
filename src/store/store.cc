@@ -13,7 +13,7 @@ Store *Store::Create(StoreConfig *conf, struct Statistic *stat, aeEventLoop *el)
   } else if (conf->type == "buffer") {
     store = new BufferStore(conf, stat, el);
   } else if (conf->type == "network") {
-    store = new NetworkStore(conf, el);
+    store = new NetworkStore(conf, stat, el);
   } else if (conf->type == "file") {
     store = new FileStore(conf, stat);
   } else if (conf->type == "null") {
@@ -48,6 +48,14 @@ bool Store::AddMessage(const Message *msg) {
   if (PreAddMessage(msg)) {
     LogDebug("pre check ok");
     return DoAddMessage(msg);
+  }
+  return false;
+}
+
+bool Store::TransferMessage(const Message *msg, const std::string &date) {
+  if (PreAddMessage(msg)) {
+    LogDebug("pre check ok");
+    return DoTransferMessage(msg, date);
   }
   return false;
 }

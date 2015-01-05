@@ -131,7 +131,7 @@ bool FileStore::HaveOldMessage() {
   return !filename.empty();
 }
 
-int FileStore::GetOldestMessages(std::deque<const Message*> *msgs) {
+int FileStore::GetOldestMessages(std::deque<BufferedMessage> *msgs) {
   int size, cnt = 0;
 
   std::string filename = FindOldestFile(path_.c_str());
@@ -153,7 +153,9 @@ int FileStore::GetOldestMessages(std::deque<const Message*> *msgs) {
 
     if (!content || !file->Read(content, size)) goto ERR;
 
-    msgs->push_back(new Message(topic, content));
+    if (filename.size() < sizeof("2000-12-34-56-78-90") - 1) goto ERR;
+
+    msgs->push_back({ .msg = new Message(topic, content), .date = RetrieveDateFromPath(filename)});
     cnt++;
     continue;
 ERR:

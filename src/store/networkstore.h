@@ -11,7 +11,7 @@ class NetworkStore : public Store {
  public:
   class Agent;
 
-  NetworkStore(StoreConfig *conf, aeEventLoop *el);
+  NetworkStore(StoreConfig *conf, struct Statistic *stat, aeEventLoop *el);
   ~NetworkStore();
 
   virtual bool Open();
@@ -28,11 +28,11 @@ class NetworkStore : public Store {
   aeEventLoop *eventl_;
 
  private:
-  NetworkStore() = delete;
+  Agent *agent_;
+  NetworkStore();
 
   virtual bool DoAddMessage(const Message *msg);
-
-  Agent *agent_;
+  virtual bool DoTransferMessage(const Message *msg, const std::string &date);
 
   std::string host_;
   int port_;
@@ -41,6 +41,7 @@ class NetworkStore : public Store {
   time_t reconnect_interval_;
   time_t last_reconnect_;
 
+  struct Statistic *stat_;
   std::list<const Message*> msg_chain_;
   std::list<bool> del_chain_;
   Store::StoreState state_;

@@ -13,6 +13,7 @@ class NetworkStore::Agent {
   std::string ToString();
 
   void Log(const Message *msg);
+  void Transfer(const Message *msg, const std::string &date);
   aeEventLoop *eventl_;
 
  private:
@@ -88,6 +89,27 @@ void NetworkStore::Agent::Log(const Message *msg) {
   req_.append_printf("$%d\r\n", sdslen(msg->content));
   req_.append(msg->content, sdslen(msg->content));
   req_.append("\r\n", 2);
+  store_->stat_->msg_dispatch++;
+}
+
+void NetworkStore::Agent::Transfer(const Message *msg, const std::string &date) {
+  if (!SetWriteEvent()) {
+    LogError("set write event failed");
+    return;
+  }
+
+  LogDebug("transfer to remote server, req buflen: %d, data: %s:%s", req_.size(), msg->topic, msg->content);
+
+  req_.append_printf("*4\r\n");
+  req_.append_printf("$8\r\nTRANSFER\r\n");
+  req_.append_printf("$%lu\r\n%s\r\n", date.size(), date.c_str());
+  req_.append_printf("$%d\r\n", sdslen(msg->topic));
+  req_.append(msg->topic, sdslen(msg->topic));
+  req_.append("\r\n", 2);
+  req_.append_printf("$%d\r\n", sdslen(msg->content));
+  req_.append(msg->content, sdslen(msg->content));
+  req_.append("\r\n", 2);
+  store_->stat_->msg_dispatch++;
 }
 
 bool NetworkStore::Agent::ParseReplyBuffer() {
@@ -156,7 +178,7 @@ bool NetworkStore::Agent::ProcessResult() {
   return true;
 }
 
-NetworkStore::NetworkStore(StoreConfig *conf, aeEventLoop *el) :Store(conf), eventl_(el) {
+NetworkStore::NetworkStore(StoreConfig *conf, struct Statistic *stat,  aeEventLoop *el) :Store(conf), eventl_(el), stat_(stat) {
   agent_ = NULL;
   reconnect_interval_ = 5;
   last_reconnect_ = 0;
@@ -220,6 +242,14 @@ bool NetworkStore::DoAddMessage(const Message *msg) {
   if (!IsOpen()) return false;
   LogDebug("add message %p", msg);
   agent_->Log(msg);
+  state_ = Store::Sending;
+  return true;
+}
+
+bool NetworkStore::DoTransferMessage(const Message *msg, const std::string &date) {
+  if (!IsOpen()) return false;
+  LogDebug("transfer message %p with datestamp %s", msg, date.c_str());
+  agent_->Transfer(msg, date);
   state_ = Store::Sending;
   return true;
 }
