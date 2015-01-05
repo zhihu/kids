@@ -102,9 +102,10 @@ void Monitor::CollectStats() {
   for (auto worker : workers_) {
     decltype(worker->stats.topic_stats) worker_stats;
 
-    worker->stats.splock.lock();
-    worker_stats.swap(worker->stats.topic_stats);
-    worker->stats.splock.unlock();
+    {
+      std::lock_guard<Spinlock> _(worker->stats.splock);
+      worker_stats.swap(worker->stats.topic_stats);
+    }
 
     for (auto &topic : worker_stats) {
       auto itr = topic_table_.find(topic.first);
@@ -170,43 +171,51 @@ bool Monitor::GetTopicCount(const sds topic, Monitor::TopicCount *topic_count) {
 
 std::vector<Monitor::ClientAddress> Monitor::GetPublisher(const sds topic) {
   std::vector<Monitor::ClientAddress> res;
-  topic_lock_.lock();
-  auto itr = topic_stats_.find(topic);
-  if (itr == topic_stats_.end()) {
-    topic_lock_.unlock();
-    return res;
-  }
-  auto inflow = itr->second.inflow_clients;
-  topic_lock_.unlock();
+  std::unordered_set<int> inflow_clients;
 
-  host_lock_.lock();
-  for (auto fd : inflow) {
-    auto itr = clients_.find(fd);
-    if (itr != clients_.end())
-      res.push_back(itr->second);
+  {
+    std::lock_guard<Spinlock> _(topic_lock_);
+    auto itr = topic_stats_.find(topic);
+    if (itr == topic_stats_.end()) {
+      return res;
+    }
+    inflow_clients = itr->second.inflow_clients;
   }
-  host_lock_.unlock();
+
+  {
+    std::lock_guard<Spinlock> _(topic_lock_);
+    for (auto fd : inflow_clients) {
+      auto itr = clients_.find(fd);
+      if (itr != clients_.end())
+        res.push_back(itr->second);
+    }
+  }
+
   return res;
 }
 
 std::vector<Monitor::ClientAddress> Monitor::GetSubscriber(const sds topic) {
   std::vector<Monitor::ClientAddress> res;
-  topic_lock_.lock();
-  auto itr = topic_stats_.find(topic);
-  if (itr == topic_stats_.end()) {
-    topic_lock_.unlock();
-    return res;
-  }
-  auto outflow = itr->second.outflow_clients;
-  topic_lock_.unlock();
+  std::unordered_set<int> outflow_clients;
 
-  host_lock_.lock();
-  for (auto fd : outflow) {
-    auto itr = clients_.find(fd);
-    if (itr != clients_.end())
-      res.push_back(itr->second);
+  {
+    std::lock_guard<Spinlock> _(topic_lock_);
+    auto itr = topic_stats_.find(topic);
+    if (itr == topic_stats_.end()) {
+      return res;
+    }
+    outflow_clients = itr->second.outflow_clients;
   }
-  host_lock_.unlock();
+
+  {
+    std::lock_guard<Spinlock> _(topic_lock_);
+    for (auto fd : outflow_clients) {
+      auto itr = clients_.find(fd);
+      if (itr != clients_.end())
+        res.push_back(itr->second);
+    }
+  }
+
   return res;
 }
 
