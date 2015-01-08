@@ -112,6 +112,8 @@ Master *Master::Create(const KidsConfig *conf) {
     k->workers_.push_back(Worker::Create(i, c, k->config_.worker_threads));
   }
 
+  k->transfer_server_ = TransferServer::Create(conf->store);
+
   k->timeid_ = aeCreateTimeEvent(k->eventl_, 5000, ServerCron, k, NULL);
   return k;
 }
@@ -188,6 +190,10 @@ bool Master::PutMessage(const sds &topic, const sds &content, const int worker_i
   return true;
 }
 
+bool Master::PutBufferMessage(const sds &date, const sds &topic, const sds &content) {
+  return transfer_server_->PutBufferMessage(date, topic, content);
+}
+
 void Master::NotifyNewMessage(const int worker_id) {
   for (auto worker : workers_) {
     worker->NotifyNewMessage(worker_id);
@@ -200,6 +206,7 @@ void Master::Start() {
   for (auto it : workers_) {
     it->Start();
   }
+  transfer_server_->Start();
   aeMain(eventl_);
 }
 
@@ -209,6 +216,7 @@ void Master::Stop() {
     it->Stop();
   }
   storer_->Stop();
+  transfer_server_->Stop();
 }
 
 void Master::Cron() {

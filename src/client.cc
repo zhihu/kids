@@ -434,6 +434,8 @@ bool Client::ProcessCommand() {
     ProcessInfo();
   } else if (!strcasecmp(command, "publish") || !strcasecmp(command, "log")) {
     ProcessLog();
+  } else if (!strcasecmp(command, "transfer")) {
+    ProcessTransfer();
   } else if (!strcasecmp(command, "subscribe")) {
     ProcessSubscribe();
   } else if (!strcasecmp(command, "psubscribe")) {
@@ -479,6 +481,24 @@ void Client::ProcessLog() {
     argv_[2] = NULL;
   }
 }
+
+void Client::ProcessTransfer() {
+  if (argv_.size() != 4) {
+    ReplyErrorFormat("invalid argments of publish");
+  } else {
+    LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
+
+    if (kids->PutBufferMessage(argv_[1], argv_[2], argv_[3])) {
+      Reply(REP_CONE, REP_CONE_SIZE);
+    } else {
+      ReplyErrorFormat("Some thing bad happens!");
+    }
+    argv_[1] = NULL;
+    argv_[2] = NULL;
+    argv_[3] = NULL;
+  }
+}
+
 
 void Client::ProcessOther() {
   static const char *redis_cmd[] = {
