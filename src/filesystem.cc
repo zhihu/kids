@@ -119,10 +119,21 @@ void DeleteOldestFile(const char *path) {
   }
 }
 
-std::string RetrieveDateFromPath(const std::string &path) {
+int RetrieveDateFromPath(const std::string &path) {
   unsigned pos = path.find_last_of("/");
   std::string filename = path.substr(pos + 1);
-  return filename.substr(0, sizeof("2000-12-34-56-78-90") - 1);
+  std::string date =  filename.substr(0, sizeof("2000-12-34-56-78-90") - 1);
+  int year, mon, day, hour, min, sec;
+  sscanf(date.c_str(), "%4d-%2d-%2d-%2d-%2d-%2d", &year, &mon, &day, &hour, &min, &sec);
+  struct tm tm;
+  memset(&tm, 0, sizeof(tm));
+  tm.tm_year = year - 1900;
+  tm.tm_mon  = mon - 1;
+  tm.tm_mday = day;
+  tm.tm_hour = hour;
+  tm.tm_min  = min;
+  tm.tm_sec  = sec;
+  return mktime(&tm);
 }
 
 std::string MakeName(std::string pattern, const struct tm& tm, std::string topic) {

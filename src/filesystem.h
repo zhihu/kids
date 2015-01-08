@@ -34,7 +34,7 @@ class File {
 
 std::string MakeName(std::string pattern, const struct tm& tm, std::string topic);
 std::string FindRoot(std::string pattern);
-std::string RetrieveDateFromPath(const std::string &Path);
+int RetrieveDateFromPath(const std::string &Path);
 
 bool MakePath(const char *path, mode_t mode);
 

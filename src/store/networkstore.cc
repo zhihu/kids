@@ -13,7 +13,7 @@ class NetworkStore::Agent {
   std::string ToString();
 
   void Log(const Message *msg);
-  void Transfer(const Message *msg, const std::string &date);
+  void Transfer(const Message *msg, int timestamp);
   aeEventLoop *eventl_;
 
  private:
@@ -92,17 +92,25 @@ void NetworkStore::Agent::Log(const Message *msg) {
   store_->stat_->msg_dispatch++;
 }
 
-void NetworkStore::Agent::Transfer(const Message *msg, const std::string &date) {
+void NetworkStore::Agent::Transfer(const Message *msg, int timestamp) {
   if (!SetWriteEvent()) {
     LogError("set write event failed");
     return;
   }
 
+  if (timestamp <= 0) {
+    LogError("timestamp illegal");
+    return ;
+  }
+
   LogDebug("transfer to remote server, req buflen: %d, data: %s:%s", req_.size(), msg->topic, msg->content);
 
+
+  int n = floor(log10(abs(timestamp))) + 1;
   req_.append_printf("*4\r\n");
   req_.append_printf("$8\r\nTRANSFER\r\n");
-  req_.append_printf("$%lu\r\n%s\r\n", date.size(), date.c_str());
+
+  req_.append_printf("$%d\r\n%d\r\n", timestamp, n);
   req_.append_printf("$%d\r\n", sdslen(msg->topic));
   req_.append(msg->topic, sdslen(msg->topic));
   req_.append("\r\n", 2);
@@ -246,10 +254,10 @@ bool NetworkStore::DoAddMessage(const Message *msg) {
   return true;
 }
 
-bool NetworkStore::DoTransferMessage(const Message *msg, const std::string &date) {
+bool NetworkStore::DoTransferMessage(const Message *msg, int timestamp) {
   if (!IsOpen()) return false;
-  LogDebug("transfer message %p with datestamp %s", msg, date.c_str());
-  agent_->Transfer(msg, date);
+  LogDebug("transfer message %p with datestamp %d", msg, timestamp);
+  agent_->Transfer(msg, timestamp);
   state_ = Store::Sending;
   return true;
 }

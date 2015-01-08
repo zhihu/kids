@@ -32,7 +32,7 @@ class NetworkStore : public Store {
   NetworkStore();
 
   virtual bool DoAddMessage(const Message *msg);
-  virtual bool DoTransferMessage(const Message *msg, const std::string &date);
+  virtual bool DoTransferMessage(const Message *msg, int timestamp);
 
   std::string host_;
   int port_;

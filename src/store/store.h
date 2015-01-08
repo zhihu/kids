@@ -28,14 +28,14 @@ class Store {
   virtual void Close() = 0;
 
   virtual bool AddMessage(const Message *msg);
-  virtual bool TransferMessage(const Message *msg, const std::string &date);
+  virtual bool TransferMessage(const Message *msg, int timestamp);
   virtual bool HaveOldMessage() { return false; }
 
   virtual StoreState State() { return Free; }
 
   struct BufferedMessage {
     const Message *msg;
-    std::string date;
+    int timestamp;
   };
 
   virtual int GetOldestMessages(std::deque<BufferedMessage> *msgs) {
@@ -56,9 +56,9 @@ class Store {
 
  private:
   virtual bool DoAddMessage(const Message *msg) = 0;
-  virtual bool DoTransferMessage(const Message *msg, const std::string &date) {
+  virtual bool DoTransferMessage(const Message *msg, int timestamp) {
     ((void) msg);
-    ((void) date);
+    ((void) timestamp);
     return true;
   }
   bool PreAddMessage(const Message *msg);

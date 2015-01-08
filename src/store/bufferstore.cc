@@ -110,7 +110,7 @@ void BufferStore::Cron() {
       BufferedMessage buffered_msg = msg_to_transfer_->front();
       msg_to_transfer_->pop_front();
       cnt++;
-      if (primary_->TransferMessage(buffered_msg.msg, buffered_msg.date)) {
+      if (primary_->TransferMessage(buffered_msg.msg, buffered_msg.timestamp)) {
         LogDebug("Transfer a bufferred msg, queue: %d remains total %d", msg_to_transfer_->size(), stat_->msg_buffer);
       } else {
         LogError("Transfer a bufferred message failed");

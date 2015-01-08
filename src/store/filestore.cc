@@ -155,7 +155,7 @@ int FileStore::GetOldestMessages(std::deque<BufferedMessage> *msgs) {
 
     if (filename.size() < sizeof("2000-12-34-56-78-90") - 1) goto ERR;
 
-    msgs->push_back({ .msg = new Message(topic, content), .date = RetrieveDateFromPath(filename)});
+    msgs->push_back({ new Message(topic, content), RetrieveDateFromPath(filename)});
     cnt++;
     continue;
 ERR:

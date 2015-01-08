@@ -52,10 +52,10 @@ bool Store::AddMessage(const Message *msg) {
   return false;
 }
 
-bool Store::TransferMessage(const Message *msg, const std::string &date) {
+bool Store::TransferMessage(const Message *msg, int timestamp) {
   if (PreAddMessage(msg)) {
     LogDebug("pre check ok");
-    return DoTransferMessage(msg, date);
+    return DoTransferMessage(msg, timestamp);
   }
   return false;
 }
