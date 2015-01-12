@@ -6,7 +6,7 @@ Kids is a log aggregation system.
 
 It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) and its pub/sub pattern is ported from [Redis](http://redis.io/).
 
-
+[中文文档](README.zh_CN.md)
 ## Features
 
 * Real-time subscription
@@ -16,15 +16,7 @@ It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) 
 * Redis protocol
 * No third-party dependencies
 
-
-## Installation
-
-### Binaries
-
-kids [releases are available on the Github project releases page](https://github.com/zhihu/kids/releases).
-Binaries are available for 64bit Linux, with package for Debian based distributions.
-
-There is an example conf in Debian packages, but it is not useful in production, to deploy in production, see [Run in production](#production).
+## Quickstart
 
 ### From Source
 
@@ -43,9 +35,6 @@ By default, it will be installed to `/usr/local/bin/kids`.
 You can use the `--prefix` option to specify the installation location.
 Run `./configure --help` for more config options.
 
-
-## Quickstart
-
 Kids comes with some sample config files in `samples/`, after building, simply run:
 
     kids -c samples/dev.conf
@@ -62,76 +51,32 @@ In yet another terminal:
 
 `redis-cli` needs `redis` to be installed. On Mac, you can run `brew install redis` to install it. On Linux, run `sudo apt-get install redis-tools`
 
-
-
 Run `kids --help` for more running options.
 
-<a name="production"></a>
-## Run in production
+### Using docker
 
-In production, we deploy kids agent at every host, which forwards log to a kids server, after deployment, you can use any redis client to publish log to local
-kids agent, and subscribe to kids server to consume the log.
+Do the following:
 
-To simplify deployment, use a package or a docker container.
-
-If you do not have to include config in the package, this may happen, 
-for example, you use puppet or saltstack to manage your configuration file, 
-then you do not have to make the package yourself, just download it from
-[kids's Github releases page](https://github.com/zhihu/kids/releases).
-
-### Configuration
-
-See [here](doc/config.md).
-
-### Creating packages
-
-Prerequisites:
-
-* [fpm](https://github.com/jordansissel/fpm)
-
-Download [kids source release](https://github.com/zhihu/kids/releases), then: 
-	
-	tar xzf kids-VERSION.tar.gz
-	cd kids-VERSION
-    cp samples/agent.conf debian/kids.conf
-    # EDIT kids.conf, minimally fill in server address
-	make deb
-
-For server, use the same deb package and overwrite /etc/kids.conf with server's config file.
-
-### Using Docker
-
-You can use docker to build a kids container to run or use it to make a deb package and run kids outside a container.
-
-First do the following:
-	
-	git clone https://github.com/zhihu/kids.git
-	cd kids
-    # or samples/server.conf
-    copy samples/agent.conf debian/kids.conf
-    # Edit kids.conf, minimally logfile should be set to stdout 
-    # to make `docker logs` work if you run kids in a container.
-
-#### Using docker to make a kids container
-
-In the project root directory, run:
-
+    git clone https://github.com/zhihu/kids.git
+    cd kids
+    cp samples/dev.conf debian/kids.conf
     docker build -t zhihu/kids .
 
-Now you can run it like so:
-
+Now you can run it like this:
+    
     docker run -d -p 3388:3388 zhihu/kids
 
-#### Using docker to make a deb package
+You can also specify the config file like this: 
+    
+    docker run -d -v /path/to/kids/conf:/etc/kids.conf -p 3388:3388 zhihu/kids
 
-Make sure you have built the `zhihu/kids` image, because the `zhihu/kids-deb` depends on it.
+## Configuration
 
-    cd debian
-    docker build -t zhihu/kid-deb .
+See [configuration](doc/config.md).
 
-You can now use the image to get a deb package.
+## Run in production
 
-    docker run -v /path/to/save/deb:/deb zhihu/kids-deb
+see [production](doc/deploy.md).
 
 ## Developer
 
@@ -163,7 +108,7 @@ A: "kids" is the recursive acronym of "Kids Is Data Stream".
 
 ![image](doc/image/arch.jpg)
 
-You can view the Chinese version README [here](README.zh_CN.md)
+
 
 
 [Build Status]: https://img.shields.io/travis/zhihu/kids/master.svg?style=flat
