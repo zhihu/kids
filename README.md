@@ -6,7 +6,7 @@ Kids is a log aggregation system.
 
 It aggregates messages like [Scribe](https://github.com/facebookarchive/scribe) and its pub/sub pattern is ported from [Redis](http://redis.io/).
 
-
+[中文文档](README.zh_CN.md)
 ## Features
 
 * Real-time subscription
@@ -108,7 +108,7 @@ A: "kids" is the recursive acronym of "Kids Is Data Stream".
 
 ![image](doc/image/arch.jpg)
 
-You can view the Chinese version README [here](README.zh_CN.md)
+
 
 
 [Build Status]: https://img.shields.io/travis/zhihu/kids/master.svg?style=flat
