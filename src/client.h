@@ -64,6 +64,7 @@ class Client {
   void UnsubscribeAllPatterns(bool notify);
 
   // monitor handlers
+  void ProcessPubSub();
   void ProcessLsActiveTopics();
   void ProcessLsAllTopics();
   void ProcessTopicInfo();

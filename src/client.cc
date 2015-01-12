@@ -437,6 +437,8 @@ bool Client::ProcessCommand() {
     ProcessPSubscribe();
   } else if (!strcasecmp(command, "unsubscribe")) {
     ProcessUnSubscribe(true);
+  } else if (!strcasecmp(command, "pubsub")) {
+    ProcessPubSub();
   } else if (!strcasecmp(command, "topics")) {
     ProcessTopics();
   } else if (!strcasecmp(command, "topicinfo")) {
@@ -522,6 +524,62 @@ void Client::ProcessShutdown() {
 
 void Client::ProcessPing() {
   Reply(REP_PONG, REP_PONG_SIZE);
+}
+
+void Client::ProcessPubSub() {
+  if (argv_.size() == 1) {
+    ReplyErrorFormat("Wrong number of arguments for '%s' command", argv_[0]);
+    return;
+  } else if (!strcasecmp("channels", argv_[1])) {
+    sds pat = (argv_.size() == 2) ? nullptr : argv_[2];
+    auto active_topics = kids->monitor_->GetActiveTopics();
+    Buffer reply;
+    if (pat) {
+      std::vector<sds> matched;
+      for (auto topic : active_topics) {
+        if (stringmatchlen(pat, sdslen(pat), topic, sdslen(topic), kids->config_.ignore_case)) {
+          matched.push_back(topic);
+        }
+      }
+      reply.append_printf("*%lu\r\n", matched.size());
+      for (auto topic : matched) {
+        reply.append_printf("$%lu\r\n%s\r\n", sdslen(topic), topic);
+      }
+    } else {
+      reply.append_printf("*%lu\r\n", active_topics.size());
+      for (auto topic : active_topics) {
+        reply.append_printf("$%lu\r\n%s\r\n", sdslen(topic), topic);
+      }
+    }
+    Reply(reply.data(), reply.size());
+  } else if (!strcasecmp("numsub", argv_[1])) {
+    Buffer reply;
+    auto topic_stats = kids->monitor_->GetTopicStats();
+    std::unordered_map<sds, int, SdsHasher, SdsEqual> matched;
+    for (int i = 2; i < argv_.size(); i++) {
+      auto itr = topic_stats.find(argv_[i]);
+      if (itr != topic_stats.end()) {
+        matched.emplace(itr->first, itr->second.outflow_clients.size());
+      }
+    }
+    reply.append_printf("*%lu\r\n", matched.size() * 2);
+    for (auto topic : matched) {
+      reply.append_printf("$%lu\r\n%s\r\n", sdslen(topic.first), topic.first);
+      char buf[128];
+      int len;
+      buf[0] = ':';
+      len = ll2string(buf + 1, sizeof(buf) - 1, topic.second);
+      buf[len+1] = '\r';
+      buf[len+2] = '\n';
+      buf[len+3] = '\0';
+      reply.append_printf("%s", buf);
+    }
+    Reply(reply.data(), reply.size());
+  } else if (!strcasecmp("numpat", argv_[1])) {
+    ReplyLongLong(kids->stat_.patterns);
+  } else {
+    ReplyErrorFormat("Unsupported PubSub argument: %s", argv_[1]);
+  }
 }
 
 void Client::ProcessLsActiveTopics() {
