@@ -110,7 +110,7 @@ void NetworkStore::Agent::Transfer(const Message *msg, int timestamp) {
   req_.append_printf("*4\r\n");
   req_.append_printf("$8\r\nTRANSFER\r\n");
 
-  req_.append_printf("$%d\r\n%d\r\n", timestamp, n);
+  req_.append_printf("$%d\r\n%d\r\n", n, timestamp);
   req_.append_printf("$%d\r\n", sdslen(msg->topic));
   req_.append(msg->topic, sdslen(msg->topic));
   req_.append("\r\n", 2);
