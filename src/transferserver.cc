@@ -84,7 +84,6 @@ TransferServer::TransferServer() {
 bool TransferServer::PutBufferMessage(const sds &date, const sds &topic, const sds &content) {
   std::lock_guard<std::mutex> _(buffer_queue_lock_);
   buffer_message_queue_.push_back({date, topic, content});
-  LogInfo("%s pushed", topic);
   return true;
 }
 
