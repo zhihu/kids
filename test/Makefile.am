@@ -30,6 +30,7 @@ KIDS_SOURCE = @top_srcdir@/src/store/store.cc \
 							@top_srcdir@/src/storer.cc \
 							@top_srcdir@/src/sds.c \
 							@top_srcdir@/src/util.cc \
+							@top_srcdir@/src/transferserver.cc \
 							@top_srcdir@/src/kids.h
 
 GTEST_SOURCE = gtest/gtest-all.cc \
