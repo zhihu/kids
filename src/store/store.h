@@ -28,10 +28,20 @@ class Store {
   virtual void Close() = 0;
 
   virtual bool AddMessage(const Message *msg);
-
+  virtual bool TransferMessage(const Message *msg, int timestamp);
   virtual bool HaveOldMessage() { return false; }
+
   virtual StoreState State() { return Free; }
-  virtual int GetOldestMessages(std::deque<const Message*> *msgs) { return 0; }
+
+  struct BufferedMessage {
+    const Message *msg;
+    int timestamp;
+  };
+
+  virtual int GetOldestMessages(std::deque<BufferedMessage> *msgs) {
+    ((void) msgs);
+    return 0;
+  }
   virtual void DeleteOldestMessages() {}
 
   virtual void Cron() {}
@@ -46,6 +56,11 @@ class Store {
 
  private:
   virtual bool DoAddMessage(const Message *msg) = 0;
+  virtual bool DoTransferMessage(const Message *msg, int timestamp) {
+    ((void) msg);
+    ((void) timestamp);
+    return true;
+  }
   bool PreAddMessage(const Message *msg);
 
   std::string topic_;
@@ -53,14 +68,17 @@ class Store {
 
 class NullStore : public Store {
  public:
-  explicit NullStore(StoreConfig *conf) : Store(conf), is_open_(false) {}
+  NullStore(StoreConfig *conf) : Store(conf), is_open_(false) {}
 
   virtual bool Open() { is_open_ = true; return true; }
   virtual bool IsOpen() { return is_open_; }
   virtual void Close() { is_open_ = false; }
 
  private:
-  virtual bool DoAddMessage(const Message *msg) { return true; }
+  virtual bool DoAddMessage(const Message *msg) {
+    ((void) msg);
+    return true;
+  }
 
   bool is_open_;
 };

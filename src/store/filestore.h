@@ -20,7 +20,7 @@ class FileStore : public Store {
   virtual void Cron();
 
   virtual bool HaveOldMessage();
-  virtual int GetOldestMessages(std::deque<const Message*> *msgs);
+  virtual int GetOldestMessages(std::deque<BufferedMessage> *msgs);
   virtual void DeleteOldestMessages();
 
  private:

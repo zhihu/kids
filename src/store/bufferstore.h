@@ -33,7 +33,7 @@ class BufferStore : public Store {
   Store *primary_;
   Store *secondary_;
   Status state_;
-  std::deque<const Message*> *msg_to_transfer_;
+  std::deque<Store::BufferedMessage> *msg_to_transfer_;
   bool is_open_;
   int max_msg_per_cron_;
 };
