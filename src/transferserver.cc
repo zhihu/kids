@@ -18,10 +18,10 @@ static int Cron(struct aeEventLoop *el, long long id, void *clientData) {
 
 bool TransferServer::AppendMessage(const BufferedMessage &msg) {
   bool success = false;
-  int t = atoi(msg.timestamp);
+  int timestamp = atoi(msg.timestamp);
   if (rotate_interval_ > 0)
-    t -= t % rotate_interval_;
-  File *file = File::Open(path_, name_, false, std::string(msg.topic), t);
+    timestamp -= timestamp % rotate_interval_;
+  File *file = File::Open(path_, name_, false, std::string(msg.topic), timestamp);
   success = file->Write(msg.content, sdslen(msg.content), false, true);
   file->Close(true);
   delete file;
@@ -35,24 +35,27 @@ bool TransferServer::AppendMessage(const BufferedMessage &msg) {
 
 int TransferServer::Cron() {
   int count = 0;
-  std::vector<BufferedMessage> msg_queue;
-  msg_queue.reserve(kMaxMessagePerCron);
+  std::vector<BufferedMessage> tmp_msg_queue;
+  tmp_msg_queue.reserve(kMaxMessagePerCron);
 
   {
     std::lock_guard<std::mutex> _(buffer_queue_lock_);
-    while (count < msg_per_cron) {
+    while (count < kMaxMessagePerCron) {
       if (buffer_message_queue_.size() == 0)
         break;
       auto msg = buffer_message_queue_.front();
-
       buffer_message_queue_.pop_front();
-      msg_queue.push_back(msg);
+      tmp_msg_queue.push_back(msg);
       count++;
     }
   }
 
+  if (tmp_msg_queue.size() == 0) {
+    return kMaxCronPeriod;
+  }
+
   std::vector<BufferedMessage> fresh_msgs;
-  for (auto i : msg_queue) {
+  for (auto i : tmp_msg_queue) {
     auto timestamp = atoi(i.timestamp);
     if (timestamp <= 0) {
       LogWarning("Error transfer command");
@@ -67,7 +70,13 @@ int TransferServer::Cron() {
   std::lock_guard<std::mutex> _(buffer_queue_lock_);
   for (auto i : fresh_msgs)
     buffer_message_queue_.push_back(i);
-  return kInitCronPeriod;
+
+  auto fresh_rate = ((double) fresh_msgs.size()) / ((double) tmp_msg_queue.size());
+
+  if (fresh_rate <= 0.3)
+    return kInitCronPeriod;
+  else
+    return kMaxCronPeriod * fresh_rate;
 }
 
 void TransferServer::Stop() {
@@ -77,8 +86,6 @@ void TransferServer::Stop() {
 
 TransferServer::TransferServer() {
   el = aeCreateEventLoop(10);
-  period       = kInitCronPeriod;
-  msg_per_cron = kMaxMessagePerCron;
 }
 
 bool TransferServer::PutBufferMessage(const sds &date, const sds &topic, const sds &content) {

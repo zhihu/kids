@@ -12,19 +12,21 @@ typedef char *sds;
 struct aeEventLoop;
 struct StoreConfig;
 
-struct BufferedMessage {
-  sds timestamp;
-  sds topic;
-  sds content;
-};
 
 class TransferServer {
  public:
   static const int kMaxMessagePerCron = 100;
   static const int kInitCronPeriod    = 5000;
+  static const int kMaxCronPeriod     = 600000;
   using TopicFile = std::unordered_map<sds, File*, SdsHasher, SdsEqual>;
 
   static TransferServer *Create(StoreConfig *conf);
+
+  struct BufferedMessage {
+    sds timestamp;
+    sds topic;
+    sds content;
+  };
 
   void Start();
   void Stop();
@@ -39,8 +41,6 @@ class TransferServer {
   std::mutex buffer_queue_lock_;
   std::deque<BufferedMessage> buffer_message_queue_;
 
-  int period;
-  int msg_per_cron;
   pthread_t transfer_tid_;
   aeEventLoop *el;
   long long clean_cron_id;
