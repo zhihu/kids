@@ -29,6 +29,7 @@
 #include "master.h"
 #include "storer.h"
 #include "store/store.h"
+#include "transferserver.h"
 #include "sds.h"
 #include "util.h"
 #include "worker.h"
