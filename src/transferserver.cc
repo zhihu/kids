@@ -1,7 +1,9 @@
 #include <vector>
 #include <algorithm>
+#include <memory>
 #include "kids.h"
 #include "transferserver.h"
+
 #define NOTUSED(V) ((void *)V)
 
 static void *TransferServerMain(void *args) {
@@ -21,10 +23,8 @@ bool TransferServer::AppendMessage(const BufferedMessage &msg) {
   int timestamp = atoi(msg.timestamp);
   if (rotate_interval_ > 0)
     timestamp -= timestamp % rotate_interval_;
-  File *file = File::Open(path_, name_, false, std::string(msg.topic), timestamp);
+  auto file = std::unique_ptr<File>(File::Open(path_, name_, false, std::string(msg.topic), timestamp));
   success = file->Write(msg.content, sdslen(msg.content), false, true);
-  file->Close(true);
-  delete file;
 
   sdsfree(msg.timestamp);
   sdsfree(msg.topic);
