@@ -484,18 +484,24 @@ void Client::ProcessLog() {
 
 void Client::ProcessTransfer() {
   if (argv_.size() != 4) {
-    ReplyErrorFormat("invalid argments of publish");
+    ReplyErrorFormat("invalid argments of transfer");
   } else {
-    LogDebug("processlog(size:%d): %s:%s", sdslen(argv_[2]), argv_[1], argv_[2]);
+    LogDebug("processtransfer(size:%d): %s:%s:%s", sdslen(argv_[3]), argv_[1], argv_[2], argv_[3]);
+    worker_->stat_.msg_in++;
+    worker_->stat_.msg_in_traffic += (sdslen(argv_[1]) + sdslen(argv_[2]));
 
-    if (kids->PutBufferMessage(argv_[1], argv_[2], argv_[3])) {
-      Reply(REP_CONE, REP_CONE_SIZE);
+    if (std::all_of(argv_[1], argv_[1] + sdslen(argv_[1]), ::isdigit)) {
+      if (kids->PutBufferMessage(argv_[1], argv_[2], argv_[3])) {
+        Reply(REP_CONE, REP_CONE_SIZE);
+      } else {
+        ReplyErrorFormat("Some thing bad happens!");
+      }
+      argv_[1] = NULL;
+      argv_[2] = NULL;
+      argv_[3] = NULL;
     } else {
-      ReplyErrorFormat("Some thing bad happens!");
+      ReplyErrorFormat("invalid timestamp!");
     }
-    argv_[1] = NULL;
-    argv_[2] = NULL;
-    argv_[3] = NULL;
   }
 }
 

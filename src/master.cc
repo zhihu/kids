@@ -127,6 +127,7 @@ Master::~Master() {
     delete it;
   }
   delete storer_;
+  delete transfer_server_;
 
   if (unixfd_ > 0) {
     close(unixfd_);

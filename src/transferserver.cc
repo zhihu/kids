@@ -5,6 +5,7 @@
 #define NOTUSED(V) ((void *)V)
 
 static void *TransferServerMain(void *args) {
+  pthread_detach(pthread_self());
   aeMain(static_cast<aeEventLoop *>(args));
   return nullptr;
 }
@@ -80,12 +81,21 @@ int TransferServer::Cron() {
 }
 
 void TransferServer::Stop() {
-  el->stop = 1;
-  pthread_join(transfer_tid_, nullptr);
+  aeStop(el_);
 }
 
 TransferServer::TransferServer() {
-  el = aeCreateEventLoop(10);
+  el_ = aeCreateEventLoop(10);
+}
+
+TransferServer::~TransferServer() {
+  aeDeleteTimeEvent(el_, clean_cron_id_);
+  for (auto msg : buffer_message_queue_) {
+    sdsfree(msg.topic);
+    sdsfree(msg.content);
+    sdsfree(msg.timestamp);
+  }
+  aeDeleteEventLoop(el_);
 }
 
 bool TransferServer::PutBufferMessage(const sds &date, const sds &topic, const sds &content) {
@@ -95,7 +105,7 @@ bool TransferServer::PutBufferMessage(const sds &date, const sds &topic, const s
 }
 
 void TransferServer::Start() {
-  pthread_create(&transfer_tid_, nullptr, TransferServerMain, el);
+  pthread_create(&transfer_tid_, nullptr, TransferServerMain, el_);
 }
 
 TransferServer *TransferServer::Create(StoreConfig *conf) {
@@ -117,6 +127,6 @@ TransferServer *TransferServer::Create(StoreConfig *conf) {
   }
 
   server->rotate_interval_ = rotate_interval_;
-  server->clean_cron_id = aeCreateTimeEvent(server->el, 5000, ::Cron, server, nullptr);
+  server->clean_cron_id_ = aeCreateTimeEvent(server->el_, 5000, ::Cron, server, nullptr);
   return server;
 }
