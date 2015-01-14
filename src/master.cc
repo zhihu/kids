@@ -265,6 +265,7 @@ void Master::Cron() {
 
     last_in = stat.msg_in;
     last_out = stat.msg_out;
+    last_dispatch = stat.msg_dispatch;
     last_in_traffic = stat.msg_in_traffic;
     last_out_traffic = stat.msg_out_traffic;
     last_time = unixtime;
