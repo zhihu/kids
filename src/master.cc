@@ -224,6 +224,7 @@ void Master::Cron() {
   unixtime                         = time(nullptr);
   static uint64_t last_in          = 0;
   static uint64_t last_out         = 0;
+  static uint64_t last_dispatch    = 0;
   static uint64_t last_in_traffic  = 0;
   static uint64_t last_out_traffic = 0;
   static time_t   last_time        = 0;
@@ -250,6 +251,7 @@ void Master::Cron() {
   stat.start_time         = stat_.start_time;
   stat.msg_in_ps          = stat_.msg_in_ps;
   stat.msg_out_ps         = stat_.msg_out_ps;
+  stat.msg_dispatch_ps    = stat_.msg_dispatch_ps;
   stat.msg_in_traffic_ps  = stat_.msg_in_traffic_ps;
   stat.msg_out_traffic_ps = stat_.msg_out_traffic_ps;
   stat.msg_drop           = stat_.msg_drop;
@@ -257,6 +259,7 @@ void Master::Cron() {
   if (unixtime - last_time >= 5) {
     stat.msg_in_ps = (stat.msg_in - last_in) / (unixtime - last_time);
     stat.msg_out_ps = (stat.msg_out - last_out) / (unixtime - last_time);
+    stat.msg_dispatch_ps = (stat.msg_dispatch - last_dispatch) / (unixtime - last_time);
     stat.msg_in_traffic_ps = (stat.msg_in_traffic - last_in_traffic) / (unixtime - last_time);
     stat.msg_out_traffic_ps = (stat.msg_out_traffic - last_out_traffic) / (unixtime - last_time);
 

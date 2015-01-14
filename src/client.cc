@@ -608,6 +608,8 @@ void Client::ProcessInfo() {
                       "message_out_per_second:%llu\r\n"
                       "message_out_traffic_per_second:%llu\r\n"
                       "message_out_traffic_per_second_human:%s\r\n"
+                      "message_dispatch:%llu\r\n"
+                      "message_dispatch_per_second:%llu\r\n"
                       "message_in_queue:%llu\r\n"
                       "queue_mem_size:%llu\r\n"
                       "queue_mem_size_human:%s\r\n"
@@ -632,6 +634,8 @@ void Client::ProcessInfo() {
                       statistic.msg_out_ps,
                       statistic.msg_out_traffic_ps,
                       msg_out_traffic_ps,
+                      statistic.msg_dispatch,
+                      statistic.msg_dispatch_ps,
                       statistic.msg_in_queue,
                       statistic.queue_mem_size,
                       queue_mem_size,

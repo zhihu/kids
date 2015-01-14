@@ -55,13 +55,14 @@ typedef struct Statistic {
   uint64_t msg_out_traffic;
   uint64_t msg_out_ps;
   uint64_t msg_out_traffic_ps;
+  uint64_t msg_dispatch;
+  uint64_t msg_dispatch_ps;
   uint64_t msg_in_queue;
   uint64_t queue_mem_size;
   uint64_t msg_store;
   uint64_t msg_store_size;
   uint64_t msg_buffer;
   uint64_t msg_buffer_size;
-  uint64_t msg_dispatch;
   uint64_t msg_drop;
   uint64_t clients;
   uint64_t topics;
