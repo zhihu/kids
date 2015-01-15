@@ -434,6 +434,8 @@ bool Client::ProcessCommand() {
     ProcessInfo();
   } else if (!strcasecmp(command, "publish") || !strcasecmp(command, "log")) {
     ProcessLog();
+  } else if (!strcasecmp(command, "transfer")) {
+    ProcessTransfer();
   } else if (!strcasecmp(command, "subscribe")) {
     ProcessSubscribe();
   } else if (!strcasecmp(command, "psubscribe")) {
@@ -479,6 +481,40 @@ void Client::ProcessLog() {
     argv_[2] = NULL;
   }
 }
+
+void Client::ProcessTransfer() {
+  if (argv_.size() != 4) {
+    ReplyErrorFormat("invalid argments of transfer");
+  } else {
+    LogDebug("processtransfer(size:%d): %s:%s:%s", sdslen(argv_[3]), argv_[1], argv_[2], argv_[3]);
+    worker_->stat_.msg_in++;
+    worker_->stat_.msg_in_traffic += (sdslen(argv_[1]) + sdslen(argv_[2]));
+
+    if (kids->config_.transfer) {
+      if (std::all_of(argv_[1], argv_[1] + sdslen(argv_[1]), ::isdigit)) {
+        if (kids->PutBufferMessage(argv_[1], argv_[2], argv_[3])) {
+          Reply(REP_CONE, REP_CONE_SIZE);
+        } else {
+          ReplyErrorFormat("Some thing bad happens!");
+        }
+        argv_[1] = NULL;
+        argv_[2] = NULL;
+        argv_[3] = NULL;
+      } else {
+        ReplyErrorFormat("invalid timestamp!");
+      }
+    } else {
+      if (kids->PutMessage(argv_[2], argv_[3], worker_->worker_id_)) {
+        Reply(REP_CONE, REP_CONE_SIZE);
+      } else {
+        ReplyErrorFormat("Some thing bad happens!");
+      }
+      argv_[2] = NULL;
+      argv_[3] = NULL;
+    }
+  }
+}
+
 
 void Client::ProcessOther() {
   static const char *redis_cmd[] = {
@@ -582,6 +618,8 @@ void Client::ProcessInfo() {
                       "message_out_per_second:%llu\r\n"
                       "message_out_traffic_per_second:%llu\r\n"
                       "message_out_traffic_per_second_human:%s\r\n"
+                      "message_dispatch:%llu\r\n"
+                      "message_dispatch_per_second:%llu\r\n"
                       "message_in_queue:%llu\r\n"
                       "queue_mem_size:%llu\r\n"
                       "queue_mem_size_human:%s\r\n"
@@ -606,6 +644,8 @@ void Client::ProcessInfo() {
                       statistic.msg_out_ps,
                       statistic.msg_out_traffic_ps,
                       msg_out_traffic_ps,
+                      statistic.msg_dispatch,
+                      statistic.msg_dispatch_ps,
                       statistic.msg_in_queue,
                       statistic.queue_mem_size,
                       queue_mem_size,

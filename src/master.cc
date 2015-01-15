@@ -48,6 +48,7 @@ Master::Master(const KidsConfig *conf)
       conf->listen_host,
       atoi(conf->listen_port.c_str()),
       conf->ignore_case == "on",
+      conf->transfer == "on",
       atoi(conf->max_clients.c_str()),
       {conf->nlimit[0], conf->nlimit[1], conf->nlimit[2]},
       1000000}
@@ -112,6 +113,15 @@ Master *Master::Create(const KidsConfig *conf) {
     k->workers_.push_back(Worker::Create(i, c, k->config_.worker_threads));
   }
 
+  if (k->config_.transfer) {
+    if (conf->store->type == "file") {
+      k->transfer_server_ = TransferServer::Create(conf->store);
+    } else {
+      LogError("Transfer can not be used by current store profile");
+      exit(1);
+    }
+  }
+
   k->timeid_ = aeCreateTimeEvent(k->eventl_, 5000, ServerCron, k, NULL);
   return k;
 }
@@ -125,6 +135,9 @@ Master::~Master() {
     delete it;
   }
   delete storer_;
+
+  if (config_.transfer)
+    delete transfer_server_;
 
   if (unixfd_ > 0) {
     close(unixfd_);
@@ -188,6 +201,10 @@ bool Master::PutMessage(const sds &topic, const sds &content, const int worker_i
   return true;
 }
 
+bool Master::PutBufferMessage(const sds &date, const sds &topic, const sds &content) {
+  return transfer_server_->PutBufferMessage(date, topic, content);
+}
+
 void Master::NotifyNewMessage(const int worker_id) {
   for (auto worker : workers_) {
     worker->NotifyNewMessage(worker_id);
@@ -200,6 +217,10 @@ void Master::Start() {
   for (auto it : workers_) {
     it->Start();
   }
+
+  if (config_.transfer)
+    transfer_server_->Start();
+
   aeMain(eventl_);
 }
 
@@ -209,12 +230,16 @@ void Master::Stop() {
     it->Stop();
   }
   storer_->Stop();
+
+  if (config_.transfer)
+    transfer_server_->Stop();
 }
 
 void Master::Cron() {
   unixtime                         = time(nullptr);
   static uint64_t last_in          = 0;
   static uint64_t last_out         = 0;
+  static uint64_t last_dispatch    = 0;
   static uint64_t last_in_traffic  = 0;
   static uint64_t last_out_traffic = 0;
   static time_t   last_time        = 0;
@@ -241,6 +266,7 @@ void Master::Cron() {
   stat.start_time         = stat_.start_time;
   stat.msg_in_ps          = stat_.msg_in_ps;
   stat.msg_out_ps         = stat_.msg_out_ps;
+  stat.msg_dispatch_ps    = stat_.msg_dispatch_ps;
   stat.msg_in_traffic_ps  = stat_.msg_in_traffic_ps;
   stat.msg_out_traffic_ps = stat_.msg_out_traffic_ps;
   stat.msg_drop           = stat_.msg_drop;
@@ -248,11 +274,13 @@ void Master::Cron() {
   if (unixtime - last_time >= 5) {
     stat.msg_in_ps = (stat.msg_in - last_in) / (unixtime - last_time);
     stat.msg_out_ps = (stat.msg_out - last_out) / (unixtime - last_time);
+    stat.msg_dispatch_ps = (stat.msg_dispatch - last_dispatch) / (unixtime - last_time);
     stat.msg_in_traffic_ps = (stat.msg_in_traffic - last_in_traffic) / (unixtime - last_time);
     stat.msg_out_traffic_ps = (stat.msg_out_traffic - last_out_traffic) / (unixtime - last_time);
 
     last_in = stat.msg_in;
     last_out = stat.msg_out;
+    last_dispatch = stat.msg_dispatch;
     last_in_traffic = stat.msg_in_traffic;
     last_out_traffic = stat.msg_out_traffic;
     last_time = unixtime;

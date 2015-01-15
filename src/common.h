@@ -22,6 +22,7 @@ typedef struct Statistic {
     msg_store_size     = 0;
     msg_buffer         = 0;
     msg_buffer_size    = 0;
+    msg_dispatch       = 0;
     msg_drop           = 0;
     clients            = 0;
     topics             = 0;
@@ -38,6 +39,7 @@ typedef struct Statistic {
     msg_store_size  += stat.msg_store_size;
     msg_buffer      += stat.msg_buffer;
     msg_buffer_size += stat.msg_buffer_size;
+    msg_dispatch    += stat.msg_dispatch;
     msg_drop        += stat.msg_drop;
     clients         += stat.clients;
     topics          += stat.topics;
@@ -53,6 +55,8 @@ typedef struct Statistic {
   uint64_t msg_out_traffic;
   uint64_t msg_out_ps;
   uint64_t msg_out_traffic_ps;
+  uint64_t msg_dispatch;
+  uint64_t msg_dispatch_ps;
   uint64_t msg_in_queue;
   uint64_t queue_mem_size;
   uint64_t msg_store;

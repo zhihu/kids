@@ -51,6 +51,7 @@ class Client {
   void ProcessInfo();
   void ProcessQuit();
   void ProcessLog();
+  void ProcessTransfer();
   void ProcessSubscribe();
   void ProcessPSubscribe();
   void ProcessUnSubscribe(bool notify);

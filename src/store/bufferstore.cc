@@ -30,7 +30,7 @@ bool BufferStore::Open() {
   if (primary_->Open()) {
     if (secondary_->HaveOldMessage()) {
       state_ = kTransfering;
-      msg_to_transfer_ = new std::deque<const Message*>();
+      msg_to_transfer_ = new std::deque<BufferedMessage>();
     } else {
       state_ = kToPrimary;
     }
@@ -57,7 +57,7 @@ void BufferStore::Close() {
   if (msg_to_transfer_ != NULL && msg_to_transfer_->size() > 0) {
     LogWarning("close store, delete %d bufferred msg", msg_to_transfer_->size());
     while (!msg_to_transfer_->empty()) {
-      delete msg_to_transfer_->front();
+      delete msg_to_transfer_->front().msg;
       msg_to_transfer_->pop_front();
 
       stat_->msg_drop++;
@@ -72,7 +72,7 @@ bool BufferStore::DoAddMessage(const Message *msg) {
   if (state_ == kToSecondary) LogDebug("state: kSecondary");
   if (state_ == kTransfering) LogDebug("state: kTransfering");
 
-  if (state_ == kToPrimary) {
+  if (state_ == kToPrimary || state_ == kTransfering) {
     if (!primary_->IsOpen() || !primary_->AddMessage(msg)) {
       LogInfo("Store to primary store faild, switch to secondary");
       secondary_->Open();
@@ -80,12 +80,11 @@ bool BufferStore::DoAddMessage(const Message *msg) {
     }
   }
 
-  if (state_ == kToSecondary || state_ == kTransfering) {
+  if (state_ == kToSecondary) {
     LogDebug("store to secondary store");
     if (!secondary_->IsOpen()) secondary_->Open();
     if (!secondary_->AddMessage(msg)) {
       LogError("Drop message: %s", ERR_SEND_SECONDARY);
-
       stat_->msg_drop++;
       return false;
     }
@@ -100,7 +99,7 @@ void BufferStore::Cron() {
     if (primary_->IsOpen()) {
       LogInfo("Primary store opened, switch to transfering");
       state_ = kTransfering;
-      msg_to_transfer_ = new std::deque<const Message*>();
+      msg_to_transfer_ = new std::deque<BufferedMessage>();
     }
   }
 
@@ -108,19 +107,19 @@ void BufferStore::Cron() {
     // send memory bufferred buffer first
     int cnt = 0;
     while (!msg_to_transfer_->empty() && cnt < max_msg_per_cron_) {
-      const Message *msg = msg_to_transfer_->front();
+      BufferedMessage buffered_msg = msg_to_transfer_->front();
       msg_to_transfer_->pop_front();
       cnt++;
-      if (primary_->AddMessage(msg)) {
+      if (primary_->TransferMessage(buffered_msg.msg, buffered_msg.timestamp)) {
         LogDebug("Transfer a bufferred msg, queue: %d remains total %d", msg_to_transfer_->size(), stat_->msg_buffer);
       } else {
         LogError("Transfer a bufferred message failed");
         stat_->msg_buffer--;
-        delete msg;
+        delete buffered_msg.msg;
         break;
       }
       stat_->msg_buffer--;
-      delete msg;
+      delete buffered_msg.msg;
     }
 
     // read a file bufferred buffer

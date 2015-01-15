@@ -43,6 +43,8 @@ static void SetKidsConfValue(KidsConfig *conf, KeyValue *kv, ParseContext *ctx) 
     conf->max_clients = kv->value[0];
   } else if (kv->key == "worker_threads") {
     conf->worker_threads = kv->value[0];
+  } else if (kv->key == "transfer") {
+    conf->transfer = kv->value[0];
   } else if (kv->key == "ignore_case") {
     conf->ignore_case = kv->value[0];
   } else if (kv->key == "nlimit") {

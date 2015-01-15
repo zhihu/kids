@@ -17,6 +17,7 @@ typedef struct MessageQueue MQ;
 struct aeEventLoop;
 class Storer;
 class Worker;
+class TransferServer;
 
 class Master {
  public:
@@ -26,6 +27,7 @@ class Master {
     std::string listen_host;
     int listen_port;
     bool ignore_case;
+    bool transfer;
     int max_clients;
     LimitConfig nlimit[3];
     uint64_t queue_limit;
@@ -36,6 +38,7 @@ class Master {
 
   void AssignNewConnection(const int fd);
   bool PutMessage(const sds &topic, const sds &content, const int worker_id);
+  bool PutBufferMessage(const sds &date, const sds &topic, const sds &content);
 
   void NotifyNewMessage(const int worker_id);
 
@@ -57,6 +60,8 @@ class Master {
 
   std::unordered_map<std::string, uint16_t> connected_clients_;
   std::mutex clients_mtx_;
+
+  TransferServer *transfer_server_;
 
   Storer *storer_;
   MQ *message_queue_;
