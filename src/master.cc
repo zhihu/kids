@@ -48,6 +48,7 @@ Master::Master(const KidsConfig *conf)
       conf->listen_host,
       atoi(conf->listen_port.c_str()),
       conf->ignore_case == "on",
+      conf->transfer == "on",
       atoi(conf->max_clients.c_str()),
       {conf->nlimit[0], conf->nlimit[1], conf->nlimit[2]},
       1000000}
@@ -112,7 +113,14 @@ Master *Master::Create(const KidsConfig *conf) {
     k->workers_.push_back(Worker::Create(i, c, k->config_.worker_threads));
   }
 
-  k->transfer_server_ = TransferServer::Create(conf->store);
+  if (k->config_.transfer) {
+    if (conf->store->type == "file") {
+      k->transfer_server_ = TransferServer::Create(conf->store);
+    } else {
+      LogError("Transfer can not be used by current store profile");
+      exit(1);
+    }
+  }
 
   k->timeid_ = aeCreateTimeEvent(k->eventl_, 5000, ServerCron, k, NULL);
   return k;
@@ -127,7 +135,9 @@ Master::~Master() {
     delete it;
   }
   delete storer_;
-  delete transfer_server_;
+
+  if (config_.transfer)
+    delete transfer_server_;
 
   if (unixfd_ > 0) {
     close(unixfd_);
@@ -207,7 +217,10 @@ void Master::Start() {
   for (auto it : workers_) {
     it->Start();
   }
-  transfer_server_->Start();
+
+  if (config_.transfer)
+    transfer_server_->Start();
+
   aeMain(eventl_);
 }
 
@@ -217,7 +230,9 @@ void Master::Stop() {
     it->Stop();
   }
   storer_->Stop();
-  transfer_server_->Stop();
+
+  if (config_.transfer)
+    transfer_server_->Stop();
 }
 
 void Master::Cron() {

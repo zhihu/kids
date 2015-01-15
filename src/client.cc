@@ -490,17 +490,27 @@ void Client::ProcessTransfer() {
     worker_->stat_.msg_in++;
     worker_->stat_.msg_in_traffic += (sdslen(argv_[1]) + sdslen(argv_[2]));
 
-    if (std::all_of(argv_[1], argv_[1] + sdslen(argv_[1]), ::isdigit)) {
-      if (kids->PutBufferMessage(argv_[1], argv_[2], argv_[3])) {
+    if (kids->config_.transfer) {
+      if (std::all_of(argv_[1], argv_[1] + sdslen(argv_[1]), ::isdigit)) {
+        if (kids->PutBufferMessage(argv_[1], argv_[2], argv_[3])) {
+          Reply(REP_CONE, REP_CONE_SIZE);
+        } else {
+          ReplyErrorFormat("Some thing bad happens!");
+        }
+        argv_[1] = NULL;
+        argv_[2] = NULL;
+        argv_[3] = NULL;
+      } else {
+        ReplyErrorFormat("invalid timestamp!");
+      }
+    } else {
+      if (kids->PutMessage(argv_[2], argv_[3], worker_->worker_id_)) {
         Reply(REP_CONE, REP_CONE_SIZE);
       } else {
         ReplyErrorFormat("Some thing bad happens!");
       }
-      argv_[1] = NULL;
       argv_[2] = NULL;
       argv_[3] = NULL;
-    } else {
-      ReplyErrorFormat("invalid timestamp!");
     }
   }
 }

@@ -105,6 +105,7 @@ bool TransferServer::PutBufferMessage(const sds &date, const sds &topic, const s
 }
 
 void TransferServer::Start() {
+  LogInfo("Transfer server started, \"transfer\" command is now supported");
   pthread_create(&transfer_tid_, nullptr, TransferServerMain, el_);
 }
 

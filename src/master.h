@@ -27,6 +27,7 @@ class Master {
     std::string listen_host;
     int listen_port;
     bool ignore_case;
+    bool transfer;
     int max_clients;
     LimitConfig nlimit[3];
     uint64_t queue_limit;
