@@ -45,3 +45,35 @@ TEST(TestParseSize, Test1) {
   EXPECT_FALSE(ParseSize("40", &t));
   EXPECT_FALSE(ParseSize("-3d", &t));
 }
+
+TEST(TestBytesToHuman, Test1) {
+  uint64_t n;
+  char str[64];
+  n = 42;
+  bytesToHuman(str, n);
+  EXPECT_STREQ("42B", str);
+
+  memset(str, 0, sizeof(str));
+  n = 42 * 1024 + 42;
+  bytesToHuman(str, n);
+  EXPECT_STREQ("42.04K", str);
+
+  memset(str, 0, sizeof(str));
+  n = 42LL * 1024 * 1024 + 42 * 1024 + 42;
+  bytesToHuman(str, n);
+  EXPECT_STREQ("42.04M", str);
+
+  memset(str, 0, sizeof(str));
+  n = 42LL * 1024 * 1024 * 1024 + 42 * 1024 * 1024 + 42 * 1024 + 42;
+  bytesToHuman(str, n);
+  EXPECT_STREQ("42.04G", str);
+
+  memset(str, 0, sizeof(str));
+  n = 42LL * 1024 * 1024 * 1024 * 1024 +
+      42LL * 1024 * 1024 * 1024 +
+      42 * 1024 * 1024 +
+      42 * 1024 +
+      42;
+  bytesToHuman(str, n);
+  EXPECT_STREQ("42.04T", str);
+}
