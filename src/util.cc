@@ -236,23 +236,27 @@ int ll2string(char *s, size_t len, long long value) {
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth. */
-void bytesToHuman(char *s, unsigned long long n) {
-    double d;
 
-    if (n < 1024) {
-        /* Bytes */
-        sprintf(s,"%lluB",n);
-        return;
-    } else if (n < (1024*1024)) {
-        d = (double)n/(1024);
-        sprintf(s,"%.2fK",d);
-    } else if (n < (1024LL*1024*1024)) {
-        d = (double)n/(1024*1024);
-        sprintf(s,"%.2fM",d);
-    } else if (n < (1024LL*1024*1024*1024)) {
-        d = (double)n/(1024LL*1024*1024);
-        sprintf(s,"%.2fG",d);
-    }
+void bytesToHuman(char *s, uint64_t n) {
+  double d;
+
+  if (n < 1024) {
+    /* Bytes */
+    sprintf(s,"%lluB",n);
+    return;
+  } else if (n < (1024*1024)) {
+    d = (double)n/(1024);
+    sprintf(s,"%.2fK",d);
+  } else if (n < (1024LL*1024*1024)) {
+    d = (double)n/(1024*1024);
+    sprintf(s,"%.2fM",d);
+  } else if (n < (1024LL*1024*1024*1024)) {
+    d = (double)n/(1024LL*1024*1024);
+    sprintf(s,"%.2fG",d);
+  } else if (n < (1024LL*1024*1024*1024*1024)) {
+    d = (double)n/(1024LL*1024*1024*1024);
+    sprintf(s, "%.2fT", d);
+  }
 }
 
 bool ParseTime(const char *str, int *value) {
