@@ -20,6 +20,7 @@ class File {
   size_t Size();
 
   bool Write(const char *data, size_t size, bool prepend_size, bool append_eol);
+  bool Flush();
   bool Read(void *data, size_t size);
 
  private:

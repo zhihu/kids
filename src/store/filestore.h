@@ -16,6 +16,7 @@ class FileStore : public Store {
 
   virtual bool Open();
   virtual bool IsOpen();
+  virtual bool Flush();
 
   virtual void Cron();
 
@@ -36,6 +37,9 @@ class FileStore : public Store {
 
   int rotate_interval_;
   time_t last_rotate_;
+
+  int flush_interval_;
+  time_t last_flush_;
 
   File *secondary_file_;
   TopicFile topic_file_;

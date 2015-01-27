@@ -199,6 +199,18 @@ bool File::Read(void *data, size_t size) {
   return true;
 }
 
+bool File::Flush() {
+  if (!is_open_) return false;
+  int ret = fflush(file_);
+  if (ret == 0) {
+    LogDebug("%s flushed", filename_.c_str());
+    return true;
+  } else {
+    LogError("%s failed to flush, ret = %d", filename_.c_str(), ret);
+    return false;
+  }
+}
+
 bool File::Write(const char *data, size_t size, bool prepend_size, bool append_eol) {
   int ret = 0;
 

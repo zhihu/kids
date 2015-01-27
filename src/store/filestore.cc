@@ -24,7 +24,13 @@ FileStore::FileStore(StoreConfig *conf, struct Statistic* stat) : Store(conf), s
     rotate_interval_ = 60 * 10;
   }
 
+  // no need to flush fwrite for secondary store
+  if (buffer_type_ == kSecondary || !ParseTime(conf->flush.c_str(), &flush_interval_)) {
+    flush_interval_ = -1;
+  }
+
   LogDebug("rotate interval %ds", rotate_interval_);
+  LogDebug("flush interval %ds", flush_interval_);
 }
 
 FileStore::~FileStore() {
@@ -50,13 +56,24 @@ bool FileStore::Open() {
     }
   }
 
-  last_rotate_ = time(NULL);
+  last_flush_ = last_rotate_ = time(NULL);
 
   return is_open_;
 }
 
 bool FileStore::IsOpen() {
   return is_open_;
+}
+
+bool FileStore::Flush() {
+  bool success = true;
+  for (auto &it : topic_file_) {
+    if (!(it.second->Flush())) {
+      LogError("failed to flush topic [%s]", it.first);
+      success = false;
+    }
+  }
+  return success;
 }
 
 void FileStore::Close() {
@@ -123,6 +140,12 @@ void FileStore::Cron() {
   if (rotate_interval_ != -1 && t % rotate_interval_ == 0 && last_rotate_ < t) {
     LogDebug("rotate %d %d %d", t, last_rotate_, rotate_interval_);
     Open();
+  } else if (flush_interval_ != -1 && t - last_flush_ >= flush_interval_) {
+    LogDebug("flush %d %d %d", t, flush_interval_, flush_interval_);
+    if (Flush()) {
+      LogDebug("successfully flushed all topic");
+    }
+    last_flush_ = t;
   }
 }
 
