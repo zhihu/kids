@@ -82,6 +82,8 @@ static void SetStoreConfValue(StoreConfig *conf, KeyValue *kv, ParseContext *ctx
     conf->name = kv->value[0];
   } else if (kv->key == "rotate") {
     conf->rotate = kv->value[0];
+  } else if (kv->key == "flush") {
+    conf->flush = kv->value[0];
   } else if (kv->key == "success") {
     conf->success = kv->value[0];
   } else if (kv->key == "topic") {

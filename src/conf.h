@@ -31,6 +31,7 @@ struct StoreConfig {
   std::string path;
   std::string name;
   std::string rotate;
+  std::string flush;
   std::string success;
   std::string topic;
   std::vector<StoreConfig*> stores;

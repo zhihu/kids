@@ -15,6 +15,10 @@ Example:
 
 Using config above, kids will save log to path like `/topic/date/01-00-00.log`.
 
+You can also add things like `flush 5s` to make sure buffered data written into log files in time.
+This would be helpful when you dealing with logs with small amount but high priority.
+In most cases, you can safely ignore `flush`, or use real-time subscribe instead.
+
 
 ### NetworkStore
 
