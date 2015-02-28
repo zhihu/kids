@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <deque>
+#include <atomic>
 
 #include "ae/libae.h"
 #include "common.h"
@@ -25,6 +26,7 @@ class Storer {
 
   void AddNotify(const int worker_id);
   void NotifyNewMessage(const int worker_id);
+  void RefreshConfig(StoreConfig *conf);
   void StoreMessage(const int fd);
   MQItem* GetCursorPosition();
 
@@ -36,7 +38,10 @@ class Storer {
   aeEventLoop *eventl_;
 
  private:
-  Storer(MQCursor* cursor, const int num_workers);
+  Storer(StoreConfig * conf, MQCursor* cursor, const int num_workers);
+
+  bool IfConfigRefreshed();
+  void DoConfigReload();
 
   MQCursor *cursor_;
 
@@ -44,6 +49,9 @@ class Storer {
   int *msg_wait_to_notify_;
   int *msg_notify_send_fd_;
   int *msg_notify_receive_fd_;
+
+  std::atomic_flag conf_loaded_;
+  StoreConfig *conf_;
 
   Store *store_;
   long long timeid_;

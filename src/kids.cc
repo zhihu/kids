@@ -14,6 +14,9 @@ Master *kids;
 __thread time_t unixtime;
 pthread_mutex_t log_lock = PTHREAD_MUTEX_INITIALIZER;
 
+std::string config_file;
+ParseContext *ctx;
+
 static void Usage(const char* program_name) {
   printf("Usage: %s [options] <config_file>\n"
          "options:\n"
@@ -41,6 +44,19 @@ void *signal_thread_function(void *arg) {
         LogInfo("Received signal %s, stopping kids now...", strsignal(signo));
         kids->Stop();
         return NULL;
+      case SIGHUP:
+        {
+          ParseContext *ctx_reloaded = ParseConfigFile(config_file);
+          if (!ctx_reloaded->success) {
+            LogError("%s\n%s\n", ERR_PARSE_CONF, ctx_reloaded->error);
+            break;
+          }
+          delete ctx;
+          ctx = ctx_reloaded;
+          LogInfo("Reload file for store config: %s", config_file.c_str());
+          kids->ReloadStoreConfig(ctx->conf);
+        }
+        break;
       case SIGUSR1:
         LogInfo("Rotate logfile", strsignal(signo));
         RotateLogger();
@@ -58,6 +74,7 @@ static pthread_t CreateSignalThread(sigset_t *mask) {
   sigaddset(mask, SIGINT);
   sigaddset(mask, SIGTERM);
   sigaddset(mask, SIGPIPE);
+  sigaddset(mask, SIGHUP);
   sigaddset(mask, SIGUSR1);
 
   int err;
@@ -108,7 +125,6 @@ void WritePID(char *pidfile) {
 }
 
 int main(int argc, char **argv) {
-  std::string config_file;
   bool daemonize = false;
   char *pidfile = NULL;
   int opt;

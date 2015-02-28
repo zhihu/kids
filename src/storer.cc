@@ -16,7 +16,7 @@ static void NewMessageHandler(aeEventLoop *el, int fd, void *privdata, int mask)
   q->StoreMessage(fd);
 }
 
-Storer::Storer(MQCursor *cursor, const int num_workers) : cursor_(cursor), num_workers_(num_workers) {
+Storer::Storer(StoreConfig *conf, MQCursor *cursor, const int num_workers) : cursor_(cursor), num_workers_(num_workers), conf_loaded_(ATOMIC_FLAG_INIT), conf_(conf) {
   eventl_ = aeCreateEventLoop(655350);
 
   msg_wait_to_notify_ = new int[num_workers_];
@@ -40,7 +40,7 @@ Storer::Storer(MQCursor *cursor, const int num_workers) : cursor_(cursor), num_w
 }
 
 Storer *Storer::Create(StoreConfig *conf, MQCursor *cursor, const int num_workers) {
-  Storer *q = new Storer(cursor, num_workers);
+  Storer *q = new Storer(conf, cursor, num_workers);
 
   q->store_ = Store::Create(conf, &q->stat_, q->eventl_);
   if (q->store_ == NULL) {
@@ -48,6 +48,7 @@ Storer *Storer::Create(StoreConfig *conf, MQCursor *cursor, const int num_worker
   }
 
   q->store_->Open();
+  std::atomic_flag_test_and_set(&q->conf_loaded_);
 
   for (int i = 0; i < q->num_workers_; ++i) {
     if (aeCreateFileEvent(q->eventl_, q->msg_notify_receive_fd_[i], AE_READABLE, NewMessageHandler, q) == AE_ERR) {
@@ -91,6 +92,16 @@ void Storer::NotifyNewMessage(const int worker_id) {
   }
 }
 
+/* called by master to refresh storer's config */
+void Storer::RefreshConfig(StoreConfig *conf) {
+  conf_ = conf;
+  conf_loaded_.clear(std::memory_order_release);
+}
+
+bool Storer::IfConfigRefreshed() {
+  return !conf_loaded_.test_and_set(std::memory_order_acquire);
+}
+
 void Storer::StoreMessage(const int fd) {
   if (store_->State() == Store::Free) {
     char tmp;
@@ -118,6 +129,9 @@ MQItem* Storer::GetCursorPosition() {
 void Storer::Cron() {
   unixtime = time(NULL);
   store_->Cron();
+  if (IfConfigRefreshed()) {
+    DoConfigReload();
+  }
 }
 
 void Storer::Start() {
@@ -128,4 +142,13 @@ void Storer::Stop() {
   eventl_->stop = 1;
   void *ret;
   pthread_join(tid_, &ret);
+}
+
+void Storer::DoConfigReload() {
+  LogInfo("start store config reloading");
+
+  delete store_;
+
+  store_ = Store::Create(conf_, &stat_, eventl_);
+  store_->Open();
 }
