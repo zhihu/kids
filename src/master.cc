@@ -211,6 +211,10 @@ void Master::Stop() {
   storer_->Stop();
 }
 
+void Master::ReloadStoreConfig(const KidsConfig* conf) {
+  storer_->RefreshConfig(conf->store);
+}
+
 void Master::Cron() {
   unixtime                         = time(nullptr);
   static uint64_t last_in          = 0;

@@ -44,6 +44,7 @@ class Master {
 
   void Start();
   void Stop();
+  void ReloadStoreConfig(const KidsConfig* conf);
   void Cron();
 
   const Config config_;
