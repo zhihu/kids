@@ -17,4 +17,3 @@ RUN ./autogen.sh && ./configure && make
 EXPOSE :3388
 
 CMD ["src/kids", "-c", "/kids/debian/kids.conf"]
-
